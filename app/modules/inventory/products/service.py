@@ -1,4 +1,5 @@
 from fastapi import HTTPException
+
 from sqlalchemy.orm import Session
 
 from app.modules.inventory.products.model import Product
@@ -12,13 +13,29 @@ from app.modules.inventory.products.repository import (
     create_product_repo,
     get_all_products_repo,
     get_product_by_id_repo,
-    get_product_by_sku_repo,
+    get_last_product_repo,
     update_product_repo,
     delete_product_repo
 )
 
 from app.modules.inventory.categories.model import Category
+
 from app.modules.inventory.units.model import Unit
+
+
+def generate_sku(
+    db: Session
+):
+
+    last_product = get_last_product_repo(db)
+
+    next_id = 1
+
+    if last_product:
+
+        next_id = last_product.id + 1
+
+    return f"PROD-{next_id:04d}"
 
 
 def create_product_service(
@@ -26,19 +43,6 @@ def create_product_service(
     product: ProductCreate,
     organization_id: int
 ):
-
-    existing_sku = get_product_by_sku_repo(
-        db,
-        product.sku,
-        organization_id
-    )
-
-    if existing_sku:
-
-        raise HTTPException(
-            status_code=400,
-            detail="SKU already exists"
-        )
 
     category = db.query(Category).filter(
         Category.id == product.category_id,
@@ -64,24 +68,32 @@ def create_product_service(
             detail="Unit not found"
         )
 
+    generated_sku = generate_sku(db)
+
     new_product = Product(
+
         organization_id=organization_id,
 
         name=product.name,
-        sku=product.sku,
+
+        sku=generated_sku,
 
         category_id=product.category_id,
+
         unit_id=product.unit_id,
 
         barcode=product.barcode,
 
         purchase_price=product.purchase_price,
+
         selling_price=product.selling_price,
 
         gst_percent=product.gst_percent,
 
         opening_stock=product.opening_stock,
-        current_stock=product.current_stock,
+
+        current_stock=product.opening_stock,
+
         minimum_stock=product.minimum_stock,
 
         description=product.description
@@ -146,34 +158,6 @@ def update_product_service(
             detail="Product not found"
         )
 
-    if product_data.category_id:
-
-        category = db.query(Category).filter(
-            Category.id == product_data.category_id,
-            Category.organization_id == organization_id
-        ).first()
-
-        if not category:
-
-            raise HTTPException(
-                status_code=404,
-                detail="Category not found"
-            )
-
-    if product_data.unit_id:
-
-        unit = db.query(Unit).filter(
-            Unit.id == product_data.unit_id,
-            Unit.organization_id == organization_id
-        ).first()
-
-        if not unit:
-
-            raise HTTPException(
-                status_code=404,
-                detail="Unit not found"
-            )
-
     return update_product_repo(
         db,
         product,
@@ -200,11 +184,7 @@ def delete_product_service(
             detail="Product not found"
         )
 
-    delete_product_repo(
+    return delete_product_repo(
         db,
         product
     )
-
-    return {
-        "message": "Product deleted successfully"
-    }

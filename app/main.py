@@ -39,6 +39,15 @@ from app.modules.inventory.stock_transactions.routes import (
 from app.modules.inventory.warehouses.routes import(
     router as warehouse_router
 )
+from app.modules.accounting.chart_of_accounts.routes import (
+    router as chart_of_accounts_router
+)
+from app.modules.accounting.journal_entries.routes import (
+    router as journal_entries_router
+)
+from app.modules.accounting.general_ledger.routes import (
+    router as general_ledger_router
+)
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -72,6 +81,9 @@ app.include_router(unit_router)
 app.include_router(products_router)
 app.include_router(stock_transaction_router)
 app.include_router(warehouse_router)
+app.include_router(chart_of_accounts_router)
+app.include_router(journal_entries_router)
+app.include_router(general_ledger_router)
 
 
 @app.get("/")
