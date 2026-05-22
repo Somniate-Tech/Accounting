@@ -94,8 +94,7 @@ def update_account(
 
 
 @router.delete(
-    "/{account_id}",
-    response_model=ChartOfAccountResponseSchema
+    "/{account_id}"
 )
 def delete_account(
     account_id: int,

@@ -96,10 +96,10 @@ class ChartOfAccountRepository:
         account: ChartOfAccount
     ):
 
-        account.is_active = False
+        db.delete(account)
 
         db.commit()
 
-        db.refresh(account)
-
-        return account
+        return {
+            "message": "Account deleted successfully"
+    }
