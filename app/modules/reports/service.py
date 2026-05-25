@@ -3,8 +3,23 @@ from sqlalchemy import func
 
 from app.modules.accounting.journal_entries.model import JournalEntryLine
 from app.modules.accounting.chart_of_accounts.model import ChartOfAccount
+from app.modules.reports.repository import ReportRepository
+from app.modules.reports.schema import (
+    PurchaseRegisterItem,
+    PurchaseRegisterResponse
+)
+from decimal import Decimal
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
+from app.modules.reports.schema import (
+    VendorLedgerItem,
+    VendorLedgerResponse,
+    OutstandingPayableItem,
+    OutstandingPayablesResponse,
+    ExpenseReportItem,
+    ExpenseReportResponse
+)
 class ReportService:
 
     @staticmethod
@@ -305,3 +320,214 @@ class ReportService:
             "is_balanced":
                 total_assets == (total_liabilities + total_equity)
         }
+    
+    @staticmethod
+    def get_purchase_register(
+        db: Session,
+        organization_id: int
+    ):
+
+        purchase_rows = ReportRepository.get_purchase_register(
+            db=db,
+            organization_id=organization_id
+        )
+
+        items = []
+
+        total_purchase_amount = Decimal("0")
+
+        for row in purchase_rows:
+
+            item = PurchaseRegisterItem(
+                bill_id=str(row.id),
+
+                bill_code=row.bill_code,
+                invoice_number=row.invoice_number,
+
+                vendor_name=row.vendor_name,
+
+                invoice_date=row.invoice_date,
+
+                total_amount=row.total_amount,
+
+                payment_status=row.payment_status.value
+            )
+
+            items.append(item)
+
+            total_purchase_amount += (
+                row.total_amount or Decimal("0")
+            )
+
+        return PurchaseRegisterResponse(
+            items=items,
+            total_purchase_amount=total_purchase_amount
+        )
+    
+
+    @staticmethod
+    def get_vendor_ledger(
+        db: Session,
+        organization_id: int,
+        vendor_id
+    ):
+
+        ledger_rows = ReportRepository.get_vendor_ledger(
+            db=db,
+            organization_id=organization_id,
+            vendor_id=vendor_id
+        )
+
+        items = []
+
+        running_balance = Decimal("0")
+
+        total_debit = Decimal("0")
+        total_credit = Decimal("0")
+
+        vendor_name = ""
+
+        for row in ledger_rows:
+
+            credit = row.credit or Decimal("0")
+            debit = Decimal("0")
+
+            running_balance += credit
+
+            total_credit += credit
+
+            item = VendorLedgerItem(
+                date=row.date,
+
+                reference=row.reference,
+
+                description=row.description,
+
+                debit=debit,
+                credit=credit,
+
+                balance=running_balance
+            )
+
+            items.append(item)
+
+        if items:
+            vendor_name = items[0].description
+
+        return VendorLedgerResponse(
+            vendor_name=vendor_name,
+
+            items=items,
+
+            total_debit=total_debit,
+            total_credit=total_credit,
+
+            closing_balance=running_balance
+        )
+    
+
+    @staticmethod
+    def get_outstanding_payables(
+        db: Session,
+        organization_id: int
+    ):
+
+        payable_rows = ReportRepository.get_outstanding_payables(
+            db=db,
+            organization_id=organization_id
+        )
+
+        vendor_map = {}
+
+        total_outstanding = Decimal("0")
+
+        for row in payable_rows:
+
+            vendor_name = row.vendor_name
+
+            if vendor_name not in vendor_map:
+
+                vendor_map[vendor_name] = {
+                    "total_bills": 0,
+                    "outstanding_amount": Decimal("0")
+                }
+
+            vendor_map[vendor_name]["total_bills"] += 1
+
+            vendor_map[vendor_name]["outstanding_amount"] += (
+                row.total_amount or Decimal("0")
+            )
+
+            total_outstanding += (
+                row.total_amount or Decimal("0")
+            )
+
+        items = []
+
+        for vendor_name, data in vendor_map.items():
+
+            item = OutstandingPayableItem(
+                vendor_name=vendor_name,
+
+                total_bills=data["total_bills"],
+
+                outstanding_amount=data["outstanding_amount"]
+            )
+
+            items.append(item)
+
+        return OutstandingPayablesResponse(
+            items=items,
+
+            total_outstanding=total_outstanding
+        )
+    
+
+    @staticmethod
+    def get_expense_report(
+        db: Session,
+        organization_id: int
+    ):
+
+        expense_rows = ReportRepository.get_expense_report(
+            db=db,
+            organization_id=organization_id
+        )
+
+        vendor_map = {}
+
+        total_expense_amount = Decimal("0")
+
+        for row in expense_rows:
+
+            vendor_name = row.vendor_name
+
+            if vendor_name not in vendor_map:
+
+                vendor_map[vendor_name] = Decimal("0")
+
+            vendor_map[vendor_name] += (
+                row.total_amount or Decimal("0")
+            )
+
+            total_expense_amount += (
+                row.total_amount or Decimal("0")
+            )
+
+        items = []
+
+        for vendor_name, total_expense in vendor_map.items():
+
+            item = ExpenseReportItem(
+                vendor_name=vendor_name,
+
+                total_expense=total_expense
+            )
+
+            items.append(item)
+
+        return ExpenseReportResponse(
+            items=items,
+
+            total_expense_amount=total_expense_amount
+        )

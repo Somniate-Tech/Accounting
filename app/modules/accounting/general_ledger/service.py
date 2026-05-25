@@ -1,80 +1,41 @@
-from decimal import Decimal
-
-from fastapi import HTTPException
-
 from sqlalchemy.orm import Session
 
-from app.modules.accounting.chart_of_accounts.model import (
-    ChartOfAccount
-)
-
-from app.modules.accounting.journal_entries.model import (
-    JournalEntryLine,
-    JournalEntry
+from app.modules.accounting.general_ledger.repository import (
+    get_account_ledger_repo
 )
 
 
-class GeneralLedgerService:
+def get_account_ledger_service(
+    db: Session,
+    account_id: int,
+    organization_id: int
+):
 
-    @staticmethod
-    def get_account_ledger(
-        db: Session,
-        organization_id: int,
-        account_id: int
-    ):
+    ledger_entries = get_account_ledger_repo(
+        db=db,
+        account_id=account_id,
+        organization_id=organization_id
+    )
 
-        account = db.query(
-            ChartOfAccount
-        ).filter(
-            ChartOfAccount.id == account_id,
-            ChartOfAccount.organization_id == organization_id
-        ).first()
+    balance = 0
 
-        if not account:
+    result = []
 
-            raise HTTPException(
-                status_code=404,
-                detail="Account not found"
-            )
+    for entry in ledger_entries:
 
-        ledger_lines = db.query(
-            JournalEntryLine,
-            JournalEntry
-        ).join(
-            JournalEntry,
-            JournalEntry.id == JournalEntryLine.journal_entry_id
-        ).filter(
-            JournalEntry.organization_id == organization_id,
-            JournalEntryLine.account_id == account_id
-        ).order_by(
-            JournalEntry.entry_date.asc()
-        ).all()
+        debit = float(entry.debit or 0)
 
-        running_balance = Decimal("0.00")
+        credit = float(entry.credit or 0)
 
-        ledger_data = []
+        balance += debit - credit
 
-        for line, entry in ledger_lines:
+        result.append({
+            "entry_date": entry.entry_date,
+            "journal_entry_id": entry.journal_entry_id,
+            "description": entry.description,
+            "debit": debit,
+            "credit": credit,
+            "balance": balance
+        })
 
-            running_balance += (
-                Decimal(line.debit)
-                -
-                Decimal(line.credit)
-            )
-
-            ledger_data.append({
-
-                "entry_date": entry.entry_date,
-
-                "journal_entry_id": entry.id,
-
-                "description": line.description,
-
-                "debit": line.debit,
-
-                "credit": line.credit,
-
-                "balance": running_balance
-            })
-
-        return ledger_data
+    return result

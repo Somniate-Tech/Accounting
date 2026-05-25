@@ -4,17 +4,11 @@ from fastapi import HTTPException
 
 from decimal import Decimal
 
-from app.modules.customers.model import (
-    Customer
-)
+from app.modules.customers.model import Customer
 
-from app.modules.sales_orders.model import (
-    SalesOrder
-)
+from app.modules.sales_orders.model import SalesOrder
 
-from app.modules.inventory.products.model import (
-    Product
-)
+from app.modules.inventory.products.model import Product
 
 from app.modules.inventory.stock_transactions.model import (
     StockTransaction
@@ -34,6 +28,109 @@ from app.modules.sales_invoices.repository import (
     delete_sales_invoice_repo
 )
 
+from app.modules.accounting.journal_entries.model import (
+    JournalEntry,
+    JournalEntryLine
+)
+
+from app.modules.accounting.chart_of_accounts.model import (
+    ChartOfAccount
+)
+
+
+def create_sales_invoice_journal(
+    db: Session,
+    invoice,
+    organization_id: int
+):
+
+    accounts_receivable = (
+        db.query(ChartOfAccount)
+        .filter(
+            ChartOfAccount.id == 13,
+            ChartOfAccount.organization_id == organization_id
+        )
+        .first()
+    )
+
+    sales_revenue = (
+        db.query(ChartOfAccount)
+        .filter(
+            ChartOfAccount.id == 14,
+            ChartOfAccount.organization_id == organization_id
+        )
+        .first()
+    )
+
+    gst_payable = (
+        db.query(ChartOfAccount)
+        .filter(
+            ChartOfAccount.id == 15,
+            ChartOfAccount.organization_id == organization_id
+        )
+        .first()
+    )
+
+    if not accounts_receivable:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Accounts Receivable account not found"
+        )
+
+    if not sales_revenue:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Sales Revenue account not found"
+        )
+
+    if not gst_payable:
+
+        raise HTTPException(
+            status_code=404,
+            detail="GST Payable account not found"
+        )
+
+    journal_entry = JournalEntry(
+        organization_id=organization_id,
+        reference_type="SALES_INVOICE",
+        reference_id=invoice.id,
+        description=f"Sales Invoice {invoice.invoice_number}"
+    )
+
+    db.add(journal_entry)
+
+    db.flush()
+
+    receivable_line = JournalEntryLine(
+        journal_entry_id=journal_entry.id,
+        account_id=accounts_receivable.id,
+        debit=invoice.total_amount,
+        credit=0,
+        description="Customer receivable"
+    )
+
+    revenue_line = JournalEntryLine(
+        journal_entry_id=journal_entry.id,
+        account_id=sales_revenue.id,
+        debit=0,
+        credit=invoice.subtotal,
+        description="Sales revenue"
+    )
+
+    gst_line = JournalEntryLine(
+        journal_entry_id=journal_entry.id,
+        account_id=gst_payable.id,
+        debit=0,
+        credit=invoice.tax_amount,
+        description="GST payable"
+    )
+
+    db.add(receivable_line)
+    db.add(revenue_line)
+    db.add(gst_line)
+
 
 def create_sales_invoice_service(
     db: Session,
@@ -42,142 +139,152 @@ def create_sales_invoice_service(
     user_id: int
 ):
 
-    # CHECK CUSTOMER
+    try:
 
-    customer = (
-        db.query(Customer)
-        .filter(
-            Customer.id == invoice.customer_id,
-            Customer.organization_id == organization_id
-        )
-        .first()
-    )
+        # CHECK CUSTOMER
 
-    if not customer:
-
-        raise HTTPException(
-            status_code=404,
-            detail="Customer not found"
-        )
-
-    # CHECK SALES ORDER
-
-    if invoice.sales_order_id:
-
-        sales_order = (
-            db.query(SalesOrder)
+        customer = (
+            db.query(Customer)
             .filter(
-                SalesOrder.id == invoice.sales_order_id,
-                SalesOrder.organization_id == organization_id
+                Customer.id == invoice.customer_id,
+                Customer.organization_id == organization_id
             )
             .first()
         )
 
-        if not sales_order:
+        if not customer:
 
             raise HTTPException(
                 status_code=404,
-                detail="Sales Order not found"
+                detail="Customer not found"
             )
 
-    # PRODUCT VALIDATION
+        # CHECK SALES ORDER
 
-    for item in invoice.items:
+        if invoice.sales_order_id:
 
-        product = (
-            db.query(Product)
-            .filter(
-                Product.id == item.product_id,
-                Product.organization_id == organization_id
-            )
-            .first()
-        )
-
-        if not product:
-
-            raise HTTPException(
-                status_code=404,
-                detail=f"Product not found for {item.item_name}"
+            sales_order = (
+                db.query(SalesOrder)
+                .filter(
+                    SalesOrder.id == invoice.sales_order_id,
+                    SalesOrder.organization_id == organization_id
+                )
+                .first()
             )
 
-        if Decimal(product.current_stock) < Decimal(item.quantity):
+            if not sales_order:
 
-            raise HTTPException(
-                status_code=400,
-                detail=f"Insufficient stock for {product.name}"
+                raise HTTPException(
+                    status_code=404,
+                    detail="Sales Order not found"
+                )
+
+        # PRODUCT VALIDATION
+
+        for item in invoice.items:
+
+            product = (
+                db.query(Product)
+                .filter(
+                    Product.id == item.product_id,
+                    Product.organization_id == organization_id
+                )
+                .first()
             )
 
-    # CREATE SALES INVOICE
+            if not product:
 
-    created_invoice = create_sales_invoice_repo(
-        db=db,
-        invoice=invoice,
-        organization_id=organization_id,
-        user_id=user_id
-    )
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Product not found for {item.item_name}"
+                )
 
-    # AUTOMATIC STOCK DEDUCTION
+            if Decimal(product.current_stock) < Decimal(item.quantity):
 
-    for item in invoice.items:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Insufficient stock for {product.name}"
+                )
 
-        product = (
-            db.query(Product)
-            .filter(
-                Product.id == item.product_id,
-                Product.organization_id == organization_id
-            )
-            .first()
-        )
+        # CREATE SALES INVOICE
 
-        before_stock = Decimal(
-            product.current_stock
-        )
-
-        quantity = Decimal(
-            item.quantity
-        )
-
-        after_stock = (
-            before_stock - quantity
-        )
-
-        # UPDATE PRODUCT STOCK
-
-        product.current_stock = after_stock
-
-        # CREATE STOCK TRANSACTION
-
-        stock_transaction = StockTransaction(
-
+        created_invoice = create_sales_invoice_repo(
+            db=db,
+            invoice=invoice,
             organization_id=organization_id,
-
-            product_id=product.id,
-
-            transaction_type="SALE",
-
-            quantity=quantity,
-
-            before_stock=before_stock,
-
-            after_stock=after_stock,
-
-            reference_type="SALES_INVOICE",
-
-            reference_id=created_invoice.id,
-
-            remarks=(
-                f"Stock deducted from invoice "
-                f"{created_invoice.invoice_number}"
-            )
+            user_id=user_id
         )
 
-        db.add(stock_transaction)
+        # CREATE AUTOMATIC JOURNAL ENTRY
 
-    db.commit()
+        create_sales_invoice_journal(
+            db=db,
+            invoice=created_invoice,
+            organization_id=organization_id
+        )
 
-    db.refresh(created_invoice)
+        # STOCK DEDUCTION
 
-    return created_invoice
+        for item in invoice.items:
+
+            product = (
+                db.query(Product)
+                .filter(
+                    Product.id == item.product_id,
+                    Product.organization_id == organization_id
+                )
+                .first()
+            )
+
+            before_stock = Decimal(product.current_stock)
+
+            quantity = Decimal(item.quantity)
+
+            after_stock = before_stock - quantity
+
+            # UPDATE PRODUCT STOCK
+
+            product.current_stock = after_stock
+
+            # CREATE STOCK TRANSACTION
+
+            stock_transaction = StockTransaction(
+
+                organization_id=organization_id,
+
+                product_id=product.id,
+
+                transaction_type="SALE",
+
+                quantity=quantity,
+
+                before_stock=before_stock,
+
+                after_stock=after_stock,
+
+                reference_type="SALES_INVOICE",
+
+                reference_id=created_invoice.id,
+
+                remarks=(
+                    f"Stock deducted from invoice "
+                    f"{created_invoice.invoice_number}"
+                )
+            )
+
+            db.add(stock_transaction)
+
+        db.commit()
+
+        db.refresh(created_invoice)
+
+        return created_invoice
+
+    except Exception as e:
+
+        db.rollback()
+
+        raise e
 
 
 def get_all_sales_invoices_service(
