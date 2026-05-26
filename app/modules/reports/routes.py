@@ -10,7 +10,13 @@ from app.modules.reports.schema import (
     PurchaseRegisterResponse,
     VendorLedgerResponse,
     OutstandingPayablesResponse,
-    ExpenseReportResponse
+    ExpenseReportResponse,
+    SalesRegisterResponse,
+    CustomerLedgerResponse,
+    OutstandingReceivablesResponse,
+    CustomerAgingResponse,
+    ProfitByCustomerResponse,
+    VendorAgingResponse,
 )
 
 router = APIRouter(
@@ -111,6 +117,98 @@ def get_expense_report(
 ):
 
     return ReportService.get_expense_report(
+        db=db,
+        organization_id=organization
+    )
+
+
+@router.get(
+    "/vendor-aging",
+    response_model=VendorAgingResponse
+)
+def get_vendor_aging(
+    db: Session = Depends(get_db),
+    organization=Depends(get_current_organization)
+):
+
+    return ReportService.get_vendor_aging(
+        db=db,
+        organization_id=organization
+    )
+
+
+@router.get(
+    "/sales-register",
+    response_model=SalesRegisterResponse
+)
+def get_sales_register(
+    db: Session = Depends(get_db),
+    organization=Depends(get_current_organization)
+):
+
+    return ReportService.get_sales_register(
+        db=db,
+        organization_id=organization
+    )
+
+
+@router.get(
+    "/customer-ledger/{customer_id}",
+    response_model=CustomerLedgerResponse
+)
+def get_customer_ledger(
+    customer_id: int,
+    db: Session = Depends(get_db),
+    organization=Depends(get_current_organization)
+):
+
+    return ReportService.get_customer_ledger(
+        db=db,
+        organization_id=organization,
+        customer_id=customer_id
+    )
+
+
+@router.get(
+    "/outstanding-receivables",
+    response_model=OutstandingReceivablesResponse
+)
+def get_outstanding_receivables(
+    db: Session = Depends(get_db),
+    organization=Depends(get_current_organization)
+):
+
+    return ReportService.get_outstanding_receivables(
+        db=db,
+        organization_id=organization
+    )
+
+
+@router.get(
+    "/customer-aging",
+    response_model=CustomerAgingResponse
+)
+def get_customer_aging(
+    db: Session = Depends(get_db),
+    organization=Depends(get_current_organization)
+):
+
+    return ReportService.get_customer_aging(
+        db=db,
+        organization_id=organization
+    )
+
+
+@router.get(
+    "/profit-by-customer",
+    response_model=ProfitByCustomerResponse
+)
+def get_profit_by_customer(
+    db: Session = Depends(get_db),
+    organization=Depends(get_current_organization)
+):
+
+    return ReportService.get_profit_by_customer(
         db=db,
         organization_id=organization
     )

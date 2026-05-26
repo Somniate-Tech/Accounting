@@ -51,6 +51,12 @@ from app.modules.accounting.general_ledger.routes import (
 from app.modules.reports.routes import(
     router as reports_router
 )
+from app.modules.customer_payments.routes import (
+    router as customer_payment_router
+)
+from app.modules.vendor_payments.routes import (
+    router as vendor_payment_router
+)
 
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -88,6 +94,8 @@ app.include_router(chart_of_accounts_router)
 app.include_router(journal_entries_router)
 app.include_router(general_ledger_router)
 app.include_router(reports_router)
+app.include_router(customer_payment_router)
+app.include_router(vendor_payment_router)
 
 
 @app.get("/")

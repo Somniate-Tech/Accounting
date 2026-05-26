@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-
+from datetime import datetime
 from app.modules.accounting.journal_entries.model import JournalEntryLine
 from app.modules.accounting.chart_of_accounts.model import ChartOfAccount
 from app.modules.reports.repository import ReportRepository
@@ -18,7 +18,19 @@ from app.modules.reports.schema import (
     OutstandingPayableItem,
     OutstandingPayablesResponse,
     ExpenseReportItem,
-    ExpenseReportResponse
+    ExpenseReportResponse,
+    SalesRegisterItem,
+    SalesRegisterResponse,
+    CustomerLedgerItem,
+    CustomerLedgerResponse,
+    OutstandingReceivableItem,
+    OutstandingReceivablesResponse,
+    CustomerAgingItem,
+    CustomerAgingResponse,
+    ProfitByCustomerItem,
+    ProfitByCustomerResponse,
+    VendorAgingItem,
+    VendorAgingResponse,
 )
 class ReportService:
 
@@ -530,4 +542,410 @@ class ReportService:
             items=items,
 
             total_expense_amount=total_expense_amount
+        )
+    
+
+    @staticmethod
+    def get_sales_register(
+        db: Session,
+        organization_id: int
+    ):
+
+        sales_rows = ReportRepository.get_sales_register(
+            db=db,
+            organization_id=organization_id
+        )
+
+        items = []
+
+        total_sales_amount = 0
+        total_paid_amount = 0
+        total_due_amount = 0
+
+        for row in sales_rows:
+
+            item = SalesRegisterItem(
+                invoice_id=row.id,
+
+                invoice_number=row.invoice_number,
+
+                customer_name=row.customer_name,
+
+                total_amount=row.total_amount,
+
+                paid_amount=row.paid_amount,
+
+                due_amount=row.due_amount,
+
+                status=row.status.value
+            )
+
+            items.append(item)
+
+            total_sales_amount += (
+                row.total_amount or 0
+            )
+
+            total_paid_amount += (
+                row.paid_amount or 0
+            )
+
+            total_due_amount += (
+                row.due_amount or 0
+            )
+
+        return SalesRegisterResponse(
+            items=items,
+
+            total_sales_amount=total_sales_amount,
+
+            total_paid_amount=total_paid_amount,
+
+            total_due_amount=total_due_amount
+        )
+    
+
+    @staticmethod
+    def get_customer_ledger(
+        db: Session,
+        organization_id: int,
+        customer_id: int
+    ):
+
+        ledger_rows, customer = (
+            ReportRepository.get_customer_ledger(
+                db=db,
+                organization_id=organization_id,
+                customer_id=customer_id
+            )
+        )
+
+        items = []
+
+        running_balance = 0
+
+        total_debit = 0
+
+        total_credit = 0
+
+        for row in ledger_rows:
+
+            debit = row.debit or 0
+
+            credit = 0
+
+            running_balance += debit
+
+            total_debit += debit
+
+            item = CustomerLedgerItem(
+                date=row.date,
+
+                invoice_number=row.invoice_number,
+
+                debit=debit,
+
+                credit=credit,
+
+                balance=running_balance
+            )
+
+            items.append(item)
+
+        return CustomerLedgerResponse(
+            customer_name=customer.customer_name,
+
+            items=items,
+
+            total_debit=total_debit,
+
+            total_credit=total_credit,
+
+            closing_balance=running_balance
+        )
+    
+
+    @staticmethod
+    def get_outstanding_receivables(
+        db: Session,
+        organization_id: int
+    ):
+
+        receivable_rows = (
+            ReportRepository.get_outstanding_receivables(
+                db=db,
+                organization_id=organization_id
+            )
+        )
+
+        customer_map = {}
+
+        total_outstanding = 0
+
+        for row in receivable_rows:
+
+            customer_name = row.customer_name
+
+            if customer_name not in customer_map:
+
+                customer_map[customer_name] = {
+                    "total_invoices": 0,
+                    "outstanding_amount": 0
+                }
+
+            customer_map[customer_name]["total_invoices"] += 1
+
+            customer_map[customer_name]["outstanding_amount"] += (
+                row.due_amount or 0
+            )
+
+            total_outstanding += (
+                row.due_amount or 0
+            )
+
+        items = []
+
+        for customer_name, data in customer_map.items():
+
+            item = OutstandingReceivableItem(
+                customer_name=customer_name,
+
+                total_invoices=data["total_invoices"],
+
+                outstanding_amount=data["outstanding_amount"]
+            )
+
+            items.append(item)
+
+        return OutstandingReceivablesResponse(
+            items=items,
+
+            total_outstanding=total_outstanding
+        )
+    
+
+
+    @staticmethod
+    def get_customer_aging(
+        db: Session,
+        organization_id: int
+    ):
+
+        aging_rows = ReportRepository.get_customer_aging(
+            db=db,
+            organization_id=organization_id
+        )
+
+        customer_map = {}
+
+        today = datetime.utcnow()
+
+        for row in aging_rows:
+
+            customer_name = row.customer_name
+
+            if customer_name not in customer_map:
+
+                customer_map[customer_name] = {
+                    "current": 0,
+                    "days_31_60": 0,
+                    "days_61_90": 0,
+                    "above_90_days": 0
+                }
+
+            due_amount = row.due_amount or 0
+
+            if row.due_date:
+
+                overdue_days = (
+                    today - row.due_date
+                ).days
+
+            else:
+
+                overdue_days = 0
+
+            if overdue_days <= 30:
+
+                customer_map[customer_name]["current"] += due_amount
+
+            elif overdue_days <= 60:
+
+                customer_map[customer_name]["days_31_60"] += due_amount
+
+            elif overdue_days <= 90:
+
+                customer_map[customer_name]["days_61_90"] += due_amount
+
+            else:
+
+                customer_map[customer_name]["above_90_days"] += due_amount
+
+        items = []
+
+        for customer_name, data in customer_map.items():
+
+            item = CustomerAgingItem(
+                customer_name=customer_name,
+
+                current=data["current"],
+
+                days_31_60=data["days_31_60"],
+
+                days_61_90=data["days_61_90"],
+
+                above_90_days=data["above_90_days"]
+            )
+
+            items.append(item)
+
+        return CustomerAgingResponse(
+            items=items
+        )
+    
+
+
+    @staticmethod
+    def get_profit_by_customer(
+        db: Session,
+        organization_id: int
+    ):
+
+        profit_rows = (
+            ReportRepository.get_profit_by_customer(
+                db=db,
+                organization_id=organization_id
+            )
+        )
+
+        customer_map = {}
+
+        total_sales_amount = 0
+
+        total_estimated_profit = 0
+
+        for row in profit_rows:
+
+            customer_name = row.customer_name
+
+            if customer_name not in customer_map:
+
+                customer_map[customer_name] = {
+                    "total_sales": 0,
+                    "estimated_profit": 0
+                }
+
+            total_sales = row.total_amount or 0
+
+            estimated_profit = total_sales * 0.30
+
+            customer_map[customer_name]["total_sales"] += total_sales
+
+            customer_map[customer_name]["estimated_profit"] += (
+                estimated_profit
+            )
+
+            total_sales_amount += total_sales
+
+            total_estimated_profit += estimated_profit
+
+        items = []
+
+        for customer_name, data in customer_map.items():
+
+            item = ProfitByCustomerItem(
+                customer_name=customer_name,
+
+                total_sales=data["total_sales"],
+
+                estimated_profit=data["estimated_profit"]
+            )
+
+            items.append(item)
+
+        return ProfitByCustomerResponse(
+            items=items,
+
+            total_sales_amount=total_sales_amount,
+
+            total_estimated_profit=total_estimated_profit
+        )
+    
+
+    @staticmethod
+    def get_vendor_aging(
+        db: Session,
+        organization_id: int
+    ):
+
+        aging_rows = ReportRepository.get_vendor_aging(
+            db=db,
+            organization_id=organization_id
+        )
+
+        vendor_map = {}
+
+        today = datetime.utcnow()
+
+        for row in aging_rows:
+
+            vendor_name = row.vendor_name
+
+            if vendor_name not in vendor_map:
+
+                vendor_map[vendor_name] = {
+                    "current": 0,
+                    "days_31_60": 0,
+                    "days_61_90": 0,
+                    "above_90_days": 0
+                }
+
+            total_amount = row.total_amount or 0
+
+            if row.due_date:
+
+                overdue_days = (
+                    today - row.due_date
+                ).days
+
+            else:
+
+                overdue_days = 0
+
+            if overdue_days <= 30:
+
+                vendor_map[vendor_name]["current"] += total_amount
+
+            elif overdue_days <= 60:
+
+                vendor_map[vendor_name]["days_31_60"] += total_amount
+
+            elif overdue_days <= 90:
+
+                vendor_map[vendor_name]["days_61_90"] += total_amount
+
+            else:
+
+                vendor_map[vendor_name]["above_90_days"] += total_amount
+
+        items = []
+
+        for vendor_name, data in vendor_map.items():
+
+            item = VendorAgingItem(
+                vendor_name=vendor_name,
+
+                current=data["current"],
+
+                days_31_60=data["days_31_60"],
+
+                days_61_90=data["days_61_90"],
+
+                above_90_days=data["above_90_days"]
+            )
+
+            items.append(item)
+
+        return VendorAgingResponse(
+            items=items
         )
