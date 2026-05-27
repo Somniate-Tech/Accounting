@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.dependencies import get_current_organization
+from app.core.dependencies import get_current_organization, get_current_user
 
 from app.modules.reports.service import ReportService
 from app.modules.reports.schema import (
@@ -17,6 +17,12 @@ from app.modules.reports.schema import (
     CustomerAgingResponse,
     ProfitByCustomerResponse,
     VendorAgingResponse,
+    StockSummaryResponse,
+    LowStockResponse,
+    InventoryValuationResponse,
+    FastMovingItemsResponse,
+    DeadStockResponse,
+    WarehouseReportResponse,
 )
 
 router = APIRouter(
@@ -209,6 +215,139 @@ def get_profit_by_customer(
 ):
 
     return ReportService.get_profit_by_customer(
+        db=db,
+        organization_id=organization
+    )
+
+
+@router.get(
+    "/stock-summary",
+    response_model=StockSummaryResponse
+)
+def get_stock_summary(
+    db: Session = Depends(get_db),
+
+    organization=Depends(
+        get_current_organization
+    ),
+
+    current_user=Depends(
+        get_current_user
+    )
+):
+
+    return ReportService.get_stock_summary(
+        db=db,
+        organization_id=organization
+    )
+
+
+@router.get(
+    "/low-stock",
+    response_model=LowStockResponse
+)
+def get_low_stock_report(
+    db: Session = Depends(get_db),
+
+    organization=Depends(
+        get_current_organization
+    ),
+
+    current_user=Depends(
+        get_current_user
+    )
+):
+
+    return ReportService.get_low_stock_report(
+        db=db,
+        organization_id=organization
+    )
+
+
+@router.get(
+    "/inventory-valuation",
+    response_model=InventoryValuationResponse
+)
+def get_inventory_valuation(
+    db: Session = Depends(get_db),
+
+    organization=Depends(
+        get_current_organization
+    ),
+
+    current_user=Depends(
+        get_current_user
+    )
+):
+
+    return ReportService.get_inventory_valuation(
+        db=db,
+        organization_id=organization
+    )
+
+
+
+@router.get(
+    "/fast-moving-items",
+    response_model=FastMovingItemsResponse
+)
+def get_fast_moving_items(
+    db: Session = Depends(get_db),
+
+    organization=Depends(
+        get_current_organization
+    ),
+
+    current_user=Depends(
+        get_current_user
+    )
+):
+
+    return ReportService.get_fast_moving_items(
+        db=db,
+        organization_id=organization
+    )
+
+
+@router.get(
+    "/dead-stock",
+    response_model=DeadStockResponse
+)
+def get_dead_stock_report(
+    db: Session = Depends(get_db),
+
+    organization=Depends(
+        get_current_organization
+    ),
+
+    current_user=Depends(
+        get_current_user
+    )
+):
+
+    return ReportService.get_dead_stock_report(
+        db=db,
+        organization_id=organization
+    )
+
+
+@router.get(
+    "/warehouse-report",
+    response_model=WarehouseReportResponse
+)
+def get_warehouse_report(
+    db: Session = Depends(get_db),
+
+    organization=Depends(
+        get_current_organization
+    ),
+
+    current_user=Depends(
+        get_current_user
+    )
+):
+
+    return ReportService.get_warehouse_report(
         db=db,
         organization_id=organization
     )

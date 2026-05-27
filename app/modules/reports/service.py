@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import datetime
+from datetime import datetime, timedelta
 from app.modules.accounting.journal_entries.model import JournalEntryLine
 from app.modules.accounting.chart_of_accounts.model import ChartOfAccount
 from app.modules.reports.repository import ReportRepository
@@ -31,7 +31,21 @@ from app.modules.reports.schema import (
     ProfitByCustomerResponse,
     VendorAgingItem,
     VendorAgingResponse,
+     StockSummaryItem,
+    StockSummaryResponse,
+    LowStockItem,
+    LowStockResponse,
+    InventoryValuationItem,
+    InventoryValuationResponse,
+    FastMovingItem,
+    FastMovingItemsResponse,
+    DeadStockItem,
+    DeadStockResponse,
+    WarehouseReportItem,
+    WarehouseReportResponse,
+
 )
+
 class ReportService:
 
     @staticmethod
@@ -738,7 +752,7 @@ class ReportService:
 
         customer_map = {}
 
-        today = datetime.utcnow()
+        today = datetime.now().date()
 
         for row in aging_rows:
 
@@ -885,7 +899,7 @@ class ReportService:
 
         vendor_map = {}
 
-        today = datetime.utcnow()
+        today = datetime.now().date()
 
         for row in aging_rows:
 
@@ -947,5 +961,274 @@ class ReportService:
             items.append(item)
 
         return VendorAgingResponse(
+            items=items
+        )
+    
+
+    @staticmethod
+    def get_stock_summary(
+        db: Session,
+        organization_id: int
+    ):
+
+        stock_data = (
+            ReportRepository.get_stock_summary(
+                db=db,
+                organization_id=organization_id
+            )
+        )
+
+        items = [
+
+            StockSummaryItem(
+
+                product_id=str(
+                    item.product_id
+                ),
+
+                product_name=item.product_name,
+
+                current_stock=float(
+                    item.current_stock
+                )
+            )
+
+            for item in stock_data
+        ]
+
+        return StockSummaryResponse(
+            items=items
+        )
+    
+
+    @staticmethod
+    def get_low_stock_report(
+        db: Session,
+        organization_id: int
+    ):
+
+        low_stock_products = (
+
+            ReportRepository.get_low_stock_products(
+                db=db,
+                organization_id=organization_id
+            )
+        )
+
+        items = [
+
+            LowStockItem(
+
+                product_id=str(
+                    item.product_id
+                ),
+
+                product_name=item.product_name,
+
+                current_stock=float(
+                    item.current_stock
+                ),
+
+                minimum_stock=float(
+                    item.minimum_stock
+                )
+            )
+
+            for item in low_stock_products
+        ]
+
+        return LowStockResponse(
+            items=items
+        )
+    
+
+    @staticmethod
+    def get_inventory_valuation(
+        db: Session,
+        organization_id: int
+    ):
+
+        products = (
+
+            ReportRepository.get_inventory_valuation(
+                db=db,
+                organization_id=organization_id
+            )
+        )
+
+        items = []
+
+        total_inventory_value = 0
+
+        for product in products:
+
+            total_value = (
+                float(product.current_stock)
+                *
+                float(product.purchase_price)
+            )
+
+            total_inventory_value += total_value
+
+            items.append(
+
+                InventoryValuationItem(
+
+                    product_id=str(
+                        product.product_id
+                    ),
+
+                    product_name=product.product_name,
+
+                    current_stock=float(
+                        product.current_stock
+                    ),
+
+                    purchase_price=float(
+                        product.purchase_price
+                    ),
+
+                    total_value=total_value
+                )
+            )
+
+        return InventoryValuationResponse(
+            items=items,
+
+            total_inventory_value=
+            total_inventory_value
+        )
+    
+
+    @staticmethod
+    def get_fast_moving_items(
+        db: Session,
+        organization_id: int
+    ):
+
+        products = (
+
+            ReportRepository.get_fast_moving_items(
+                db=db,
+                organization_id=organization_id
+            )
+        )
+
+        items = [
+
+            FastMovingItem(
+
+                product_id=str(
+                    item.product_id
+                ),
+
+                product_name=item.product_name,
+
+                total_quantity_sold=float(
+                    item.total_quantity_sold
+                )
+            )
+
+            for item in products
+        ]
+
+        return FastMovingItemsResponse(
+            items=items
+        )
+    
+    @staticmethod
+    def get_dead_stock_report(
+        db: Session,
+        organization_id: int
+    ):
+
+        products = (
+
+            ReportRepository.get_dead_stock_items(
+                db=db,
+                organization_id=organization_id
+            )
+        )
+
+        cutoff_date = (
+            datetime.utcnow()
+            - timedelta(days=90)
+        )
+
+        items = []
+
+        for product in products:
+
+            if (
+
+                product.last_sold_date is None
+
+                or
+
+                product.last_sold_date
+                < cutoff_date
+            ):
+
+                items.append(
+
+                    DeadStockItem(
+
+                        product_id=str(
+                            product.product_id
+                        ),
+
+                        product_name=product.product_name,
+
+                        current_stock=float(
+                            product.current_stock
+                        ),
+
+                        last_sold_date=
+                        product.last_sold_date
+                    )
+                )
+
+        return DeadStockResponse(
+            items=items
+        )
+    
+
+    @staticmethod
+    def get_warehouse_report(
+        db: Session,
+        organization_id: int
+    ):
+
+        warehouses = (
+
+            ReportRepository.get_warehouse_report(
+                db=db,
+                organization_id=organization_id
+            )
+        )
+
+        items = [
+
+            WarehouseReportItem(
+
+                warehouse_id=str(
+                    item.warehouse_id
+                ),
+
+                warehouse_name=item.warehouse_name,
+
+                total_products=int(
+                    item.total_products
+                ),
+
+                total_stock=float(
+                    item.total_stock or 0
+                )
+            )
+
+            for item in warehouses
+        ]
+
+        return WarehouseReportResponse(
             items=items
         )

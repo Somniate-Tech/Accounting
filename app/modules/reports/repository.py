@@ -6,6 +6,36 @@ from app.modules.sales_invoices.model import SalesInvoice
 from app.modules.customers.model import Customer
 from app.modules.customers.model import Customer
 from app.modules.sales_invoices.model import SalesInvoice
+from sqlalchemy import func
+from app.modules.inventory.products.model import (Product)
+from sqlalchemy import func
+
+from app.modules.sales_invoices.model import (
+    SalesInvoiceItem
+)
+from sqlalchemy import func
+
+from app.modules.sales_invoices.model import (
+    SalesInvoiceItem
+)
+
+from app.modules.inventory.products.model import (
+    Product
+)
+
+from app.modules.sales_invoices.model import (
+    SalesInvoice
+)
+from app.modules.inventory.warehouses.model import (
+    Warehouse
+)
+from app.modules.inventory.stock_transactions.model import (
+    StockTransaction
+)
+from app.modules.inventory.warehouses.model import (
+    Warehouse
+)
+
 class ReportRepository:
 
     @staticmethod
@@ -335,3 +365,271 @@ class ReportRepository:
         )
 
         return aging_rows
+    
+
+    @staticmethod
+    def get_stock_summary(
+        db: Session,
+        organization_id: int
+    ):
+
+        return (
+
+            db.query(
+
+                Product.id.label(
+                    "product_id"
+                ),
+
+                Product.name.label(
+                    "product_name"
+                ),
+
+                Product.current_stock.label(
+                    "current_stock"
+                )
+            )
+
+            .filter(
+                Product.organization_id
+                == organization_id
+            )
+
+            .all()
+        )
+    
+
+    @staticmethod
+    def get_low_stock_products(
+        db: Session,
+        organization_id: int
+    ):
+
+        return (
+
+            db.query(
+
+                Product.id.label(
+                    "product_id"
+                ),
+
+                Product.name.label(
+                    "product_name"
+                ),
+
+                Product.current_stock.label(
+                    "current_stock"
+                ),
+
+                Product.minimum_stock.label(
+                    "minimum_stock"
+                )
+            )
+
+            .filter(
+                Product.organization_id
+                == organization_id,
+
+                Product.current_stock
+                < Product.minimum_stock
+            )
+
+            .all()
+        )
+    
+
+
+    @staticmethod
+    def get_inventory_valuation(
+        db: Session,
+        organization_id: int
+    ):
+
+        return (
+
+            db.query(
+
+                Product.id.label(
+                    "product_id"
+                ),
+
+                Product.name.label(
+                    "product_name"
+                ),
+
+                Product.current_stock.label(
+                    "current_stock"
+                ),
+
+                Product.purchase_price.label(
+                    "purchase_price"
+                )
+            )
+
+            .filter(
+                Product.organization_id
+                == organization_id
+            )
+
+            .all()
+        )
+    @staticmethod
+    def get_fast_moving_items(
+        db: Session,
+        organization_id: int
+    ):
+
+        return (
+
+            db.query(
+
+                Product.id.label(
+                    "product_id"
+                ),
+
+                Product.name.label(
+                    "product_name"
+                ),
+
+                func.sum(
+                    SalesInvoiceItem.quantity
+                ).label(
+                    "total_quantity_sold"
+                )
+            )
+
+            .join(
+                Product,
+
+                Product.id
+                == SalesInvoiceItem.product_id
+            )
+
+            .filter(
+                SalesInvoiceItem.organization_id
+                == organization_id
+            )
+
+            .group_by(
+                Product.id,
+                Product.name
+            )
+
+            .order_by(
+                func.sum(
+                    SalesInvoiceItem.quantity
+                ).desc()
+            )
+
+            .all()
+        )
+    
+
+    @staticmethod
+    def get_dead_stock_items(
+        db: Session,
+        organization_id: int
+    ):
+
+        return (
+
+            db.query(
+
+                Product.id.label(
+                    "product_id"
+                ),
+
+                Product.name.label(
+                    "product_name"
+                ),
+
+                Product.current_stock.label(
+                    "current_stock"
+                ),
+
+                func.max(
+                    SalesInvoice.invoice_date
+                ).label(
+                    "last_sold_date"
+                )
+            )
+
+            .outerjoin(
+                SalesInvoiceItem,
+
+                Product.id
+                == SalesInvoiceItem.product_id
+            )
+
+            .outerjoin(
+                SalesInvoice,
+
+                SalesInvoice.id
+                == SalesInvoiceItem.invoice_id
+            )
+
+            .filter(
+                Product.organization_id
+                == organization_id
+            )
+
+            .group_by(
+                Product.id,
+                Product.name,
+                Product.current_stock
+            )
+
+            .all()
+        )
+    
+
+    @staticmethod
+    def get_warehouse_report(
+        db: Session,
+        organization_id: int
+    ):
+
+        return (
+
+            db.query(
+
+                Warehouse.id.label(
+                    "warehouse_id"
+                ),
+
+                Warehouse.name.label(
+                    "warehouse_name"
+                ),
+
+                func.count(
+                    StockTransaction.product_id.distinct()
+                ).label(
+                    "total_products"
+                ),
+
+                func.sum(
+                    StockTransaction.quantity
+                ).label(
+                    "total_stock"
+                )
+            )
+
+            .join(
+                StockTransaction,
+
+                Warehouse.id
+                == StockTransaction.warehouse_id
+            )
+
+            .filter(
+                Warehouse.organization_id
+                == organization_id
+            )
+
+            .group_by(
+                Warehouse.id,
+                Warehouse.name
+            )
+
+            .all()
+        )

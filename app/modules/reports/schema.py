@@ -181,3 +181,100 @@ class VendorAgingItem(BaseModel):
 
 class VendorAgingResponse(BaseModel):
     items: list[VendorAgingItem]
+
+
+class StockSummaryItem(BaseModel):
+
+    product_id: str
+
+    product_name: str
+
+    warehouse_name: str
+
+    current_stock: float
+
+
+class StockSummaryResponse(BaseModel):
+
+    items: list[StockSummaryItem]
+
+
+
+class LowStockItem(BaseModel):
+
+    product_id: str
+
+    product_name: str
+
+    current_stock: float
+
+    minimum_stock: float
+
+
+class LowStockResponse(BaseModel):
+
+    items: list[LowStockItem]
+
+
+class InventoryValuationItem(BaseModel):
+
+    product_id: str
+
+    product_name: str
+
+    current_stock: float
+
+    purchase_price: float
+
+    total_value: float
+
+
+class InventoryValuationResponse(BaseModel):
+
+    items: list[InventoryValuationItem]
+
+    total_inventory_value: float
+
+class FastMovingItem(BaseModel):
+
+    product_id: str
+
+    product_name: str
+
+    total_quantity_sold: float
+
+
+class FastMovingItemsResponse(BaseModel):
+
+    items: list[FastMovingItem]
+
+
+class DeadStockItem(BaseModel):
+
+    product_id: str
+
+    product_name: str
+
+    current_stock: float
+
+    last_sold_date: datetime | None = None
+
+
+class DeadStockResponse(BaseModel):
+
+    items: list[DeadStockItem]
+
+class WarehouseReportItem(BaseModel):
+
+    warehouse_id: str
+
+    warehouse_name: str
+
+    total_products: int
+
+    total_stock: float
+
+
+class WarehouseReportResponse(BaseModel):
+
+    items: list[WarehouseReportItem]
