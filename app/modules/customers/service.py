@@ -16,7 +16,16 @@ from app.modules.customers.repository import (
     update_customer_repo,
     delete_customer_repo
 )
+from app.core.feature_guard import (
+    FeatureGuard
+)
 
+from app.core.constants import (
+    FeatureCodes
+)
+from app.core.usage_guard import (
+    UsageGuard
+)
 
 def create_customer_service(
     db: Session,
@@ -24,6 +33,27 @@ def create_customer_service(
     organization_id: int,
     user_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.CUSTOMERS
+    )
+    current_customer_count = (
+        db.query(Customer)
+        .filter(
+            Customer.organization_id == organization_id
+        )
+    .count()
+    )
+
+    UsageGuard.check_limit(
+        db=db,
+        organization_id=organization_id,
+        current_count=current_customer_count,
+        limit_field="max_customers",
+        resource_name="Customer"
+    )
+        
     # Duplicate email validation
     if customer.email:
         existing_email = db.query(Customer).filter(
@@ -65,6 +95,11 @@ def get_all_customers_service(
     limit: int,
     search: str = None
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.CUSTOMERS
+    )
     return get_all_customers_repo(
         db,
         organization_id,
@@ -79,6 +114,11 @@ def get_single_customer_service(
     customer_id: int,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.CUSTOMERS
+    )
     customer = get_single_customer_repo(
         db,
         customer_id,
@@ -100,6 +140,11 @@ def update_customer_service(
     customer: CustomerUpdate,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.CUSTOMERS
+    )
     existing_customer = get_single_customer_repo(
         db,
         customer_id,
@@ -124,6 +169,11 @@ def delete_customer_service(
     customer_id: int,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.CUSTOMERS
+    )
     customer = get_single_customer_repo(
         db,
         customer_id,

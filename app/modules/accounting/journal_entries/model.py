@@ -36,7 +36,7 @@ class JournalEntry(Base):
     )
 
     reference_id = Column(
-        Integer,
+        String,
         nullable=True
     )
 

@@ -57,7 +57,21 @@ from app.modules.customer_payments.routes import (
 from app.modules.vendor_payments.routes import (
     router as vendor_payment_router
 )
-
+from app.modules.subscriptions.plans.routes import (
+    router as subscription_plan_router
+)
+from app.modules.subscriptions.organization_subscriptions.routes import(
+    router as organization_subscription_router
+)
+from app.modules.subscriptions.features.routes import (
+    router as feature_router
+)
+from app.modules.subscriptions.plan_features.routes import (
+    router as plan_feature_router
+)
+from app.modules.admin.routes import (
+    router as admin_router
+)
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -96,7 +110,11 @@ app.include_router(general_ledger_router)
 app.include_router(reports_router)
 app.include_router(customer_payment_router)
 app.include_router(vendor_payment_router)
-
+app.include_router(subscription_plan_router)
+app.include_router(organization_subscription_router)
+app.include_router(feature_router)
+app.include_router(plan_feature_router)
+app.include_router(admin_router)
 
 @app.get("/")
 def home():

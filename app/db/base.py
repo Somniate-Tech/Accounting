@@ -69,3 +69,18 @@ from app.modules.accounting.journal_entries.model import (
     JournalEntry,
     JournalEntryLine
 )
+
+from app.modules.subscriptions.plans.model import (
+    SubscriptionPlan
+)
+
+from app.modules.subscriptions.organization_subscriptions.model import (
+    OrganizationSubscription
+)
+from app.modules.subscriptions.features.model import (
+    Feature
+)
+
+from app.modules.subscriptions.plan_features.model import (
+    PlanFeature
+)

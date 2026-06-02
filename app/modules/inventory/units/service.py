@@ -7,6 +7,12 @@ from app.modules.inventory.units.schema import (
     UnitCreate,
     UnitUpdate
 )
+from app.core.feature_guard import (
+    FeatureGuard
+)
+from app.core.constants import (
+    FeatureCodes
+)
 
 from app.modules.inventory.units.repository import (
     create_unit_repo,
@@ -22,6 +28,11 @@ def create_unit_service(
     unit: UnitCreate,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.INVENTORY
+    )
 
     existing_unit = db.query(Unit).filter(
         Unit.name == unit.name,
@@ -51,6 +62,11 @@ def get_all_units_service(
     db: Session,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.INVENTORY
+    )
 
     return get_all_units_repo(
         db,
@@ -63,6 +79,11 @@ def get_unit_by_id_service(
     unit_id: int,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.INVENTORY
+    )
 
     unit = get_unit_by_id_repo(
         db,
@@ -86,6 +107,11 @@ def update_unit_service(
     unit_data: UnitUpdate,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.INVENTORY
+    )
 
     unit = get_unit_by_id_repo(
         db,
@@ -112,6 +138,12 @@ def delete_unit_service(
     unit_id: int,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.INVENTORY
+    )
+
 
     unit = get_unit_by_id_repo(
         db,

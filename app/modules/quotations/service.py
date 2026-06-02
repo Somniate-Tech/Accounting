@@ -21,7 +21,13 @@ from app.modules.quotations.repository import (
     update_quotation_repo,
     delete_quotation_repo
 )
+from app.core.feature_guard import (
+    FeatureGuard
+)
 
+from app.core.constants import (
+    FeatureCodes
+)
 
 def create_quotation_service(
     db: Session,
@@ -29,6 +35,11 @@ def create_quotation_service(
     organization_id: int,
     user_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.SALES
+    )
     customer = (
         db.query(Customer)
         .filter(
@@ -58,6 +69,11 @@ def get_all_quotations_service(
     limit: int,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.SALES
+    )
     skip = (page - 1) * limit
 
     quotations = get_all_quotations_repo(
@@ -90,6 +106,11 @@ def get_single_quotation_service(
     quotation_id: int,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.SALES
+    )
     quotation = get_quotation_by_id_repo(
         db=db,
         quotation_id=quotation_id,
@@ -111,6 +132,11 @@ def update_quotation_service(
     quotation_update: QuotationUpdate,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.SALES
+    )
     quotation = get_quotation_by_id_repo(
         db=db,
         quotation_id=quotation_id,
@@ -135,6 +161,11 @@ def delete_quotation_service(
     quotation_id: int,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.SALES
+    )
     quotation = get_quotation_by_id_repo(
         db=db,
         quotation_id=quotation_id,
@@ -150,7 +181,8 @@ def delete_quotation_service(
     existing_sales_order = (
         db.query(SalesOrder)
         .filter(
-            SalesOrder.quotation_id == quotation.id
+            SalesOrder.quotation_id == quotation.id,
+            SalesOrder.organization_id == organization_id
         )
         .first()
     )

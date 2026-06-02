@@ -16,13 +16,42 @@ from app.modules.vendors.repository import (
     update_vendor_repo,
     delete_vendor_repo
 )
+from app.core.feature_guard import (
+    FeatureGuard
+)
+from app.core.usage_guard import (
+    UsageGuard
+)
 
+from app.core.constants import (
+    FeatureCodes
+)
 
 def create_vendor_service(
     db: Session,
     vendor: VendorCreate,
     organization_id
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.VENDORS
+    )
+    current_vendor_count = (
+        db.query(Vendor)
+        .filter(
+            Vendor.organization_id == organization_id
+        )
+        .count()
+    )
+
+    UsageGuard.check_limit(
+        db=db,
+        organization_id=organization_id,
+        current_count=current_vendor_count,
+        limit_field="max_vendors",
+        resource_name="Vendor"
+    )
 
     existing_email = (
         db.query(Vendor)
@@ -53,6 +82,12 @@ def get_all_vendors_service(
     page: int,
     limit: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.VENDORS
+    )
+
 
     skip = (page - 1) * limit
 
@@ -66,12 +101,20 @@ def get_all_vendors_service(
 
 def get_vendor_by_code_service(
     db: Session,
-    vendor_code: str
+    vendor_code: str,
+    organization_id,
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.VENDORS
+    )
+
 
     vendor = get_vendor_by_code_repo(
         db=db,
-        vendor_code=vendor_code
+        vendor_code=vendor_code,
+        organization_id=organization_id
     )
 
     if not vendor:
@@ -87,12 +130,19 @@ def get_vendor_by_code_service(
 def update_vendor_service(
     db: Session,
     vendor_code: str,
-    vendor_update: VendorUpdate
+    vendor_update: VendorUpdate,
+    organization_id,
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.VENDORS
+    )
 
     vendor = get_vendor_by_code_repo(
         db=db,
-        vendor_code=vendor_code
+        vendor_code=vendor_code,
+        organization_id=organization_id
     )
 
     if not vendor:
@@ -113,12 +163,20 @@ def update_vendor_service(
 
 def delete_vendor_service(
     db: Session,
-    vendor_code: str
+    vendor_code: str,
+    organization_id
 ):
+    
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.VENDORS
+    )
 
     vendor = get_vendor_by_code_repo(
         db=db,
-        vendor_code=vendor_code
+        vendor_code=vendor_code,
+        organization_id=organization_id
     )
 
     if not vendor:

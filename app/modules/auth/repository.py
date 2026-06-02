@@ -7,6 +7,7 @@ from app.modules.organizations.model import Organization
 from app.modules.organization_members.model import (
     OrganizationMember
 )
+from app.core.constants import UserRoles
 
 
 def get_user_by_email_repo(
@@ -27,7 +28,8 @@ def create_user_repo(
 
     user = User(
         email=email,
-        password=password
+        password=password,
+        role=UserRoles.OWNER
     )
 
     db.add(user)

@@ -10,7 +10,13 @@ from app.modules.reports.schema import (
 )
 from decimal import Decimal
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.feature_guard import (
+    FeatureGuard
+)
 
+from app.core.constants import (
+    FeatureCodes
+)
 
 from app.modules.reports.schema import (
     VendorLedgerItem,
@@ -50,6 +56,12 @@ class ReportService:
 
     @staticmethod
     def get_trial_balance(db: Session, organization_id: int):
+
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.REPORTS
+        )
 
         trial_balance = (
             db.query(
@@ -121,6 +133,12 @@ class ReportService:
 
     @staticmethod
     def get_profit_and_loss(db: Session, organization_id: int):
+
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.REPORTS
+        )
 
         revenue_accounts = (
             db.query(
@@ -214,6 +232,12 @@ class ReportService:
     
     @staticmethod
     def get_balance_sheet(db: Session, organization_id: int):
+
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.REPORTS
+        )
 
         asset_accounts = (
             db.query(
@@ -352,6 +376,11 @@ class ReportService:
         db: Session,
         organization_id: int
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.REPORTS
+        )
 
         purchase_rows = ReportRepository.get_purchase_register(
             db=db,
@@ -397,6 +426,11 @@ class ReportService:
         organization_id: int,
         vendor_id
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.REPORTS
+        )
 
         ledger_rows = ReportRepository.get_vendor_ledger(
             db=db,
@@ -457,6 +491,11 @@ class ReportService:
         db: Session,
         organization_id: int
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.REPORTS
+        )
 
         payable_rows = ReportRepository.get_outstanding_payables(
             db=db,
@@ -514,6 +553,11 @@ class ReportService:
         db: Session,
         organization_id: int
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.REPORTS
+        )
 
         expense_rows = ReportRepository.get_expense_report(
             db=db,
@@ -564,6 +608,11 @@ class ReportService:
         db: Session,
         organization_id: int
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.REPORTS
+        )
 
         sales_rows = ReportRepository.get_sales_register(
             db=db,
@@ -625,6 +674,11 @@ class ReportService:
         organization_id: int,
         customer_id: int
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.REPORTS
+        )
 
         ledger_rows, customer = (
             ReportRepository.get_customer_ledger(
@@ -684,6 +738,11 @@ class ReportService:
         db: Session,
         organization_id: int
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.REPORTS
+        )
 
         receivable_rows = (
             ReportRepository.get_outstanding_receivables(
@@ -744,6 +803,11 @@ class ReportService:
         db: Session,
         organization_id: int
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.REPORTS
+        )
 
         aging_rows = ReportRepository.get_customer_aging(
             db=db,
@@ -824,6 +888,11 @@ class ReportService:
         db: Session,
         organization_id: int
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.REPORTS
+        )
 
         profit_rows = (
             ReportRepository.get_profit_by_customer(
@@ -891,6 +960,11 @@ class ReportService:
         db: Session,
         organization_id: int
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.REPORTS
+        )
 
         aging_rows = ReportRepository.get_vendor_aging(
             db=db,
@@ -970,6 +1044,11 @@ class ReportService:
         db: Session,
         organization_id: int
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.REPORTS
+        )
 
         stock_data = (
             ReportRepository.get_stock_summary(
@@ -1006,6 +1085,11 @@ class ReportService:
         db: Session,
         organization_id: int
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.REPORTS
+        )
 
         low_stock_products = (
 
@@ -1047,6 +1131,11 @@ class ReportService:
         db: Session,
         organization_id: int
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.REPORTS
+        )
 
         products = (
 
@@ -1105,6 +1194,11 @@ class ReportService:
         db: Session,
         organization_id: int
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.REPORTS
+        )
 
         products = (
 
@@ -1118,9 +1212,7 @@ class ReportService:
 
             FastMovingItem(
 
-                product_id=str(
-                    item.product_id
-                ),
+                 product_id="0",
 
                 product_name=item.product_name,
 
@@ -1141,6 +1233,11 @@ class ReportService:
         db: Session,
         organization_id: int
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.REPORTS
+        )
 
         products = (
 
@@ -1198,6 +1295,11 @@ class ReportService:
         db: Session,
         organization_id: int
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.REPORTS
+        )
 
         warehouses = (
 

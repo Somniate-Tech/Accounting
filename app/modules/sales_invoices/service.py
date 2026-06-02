@@ -18,6 +18,13 @@ from app.modules.sales_invoices.schema import (
     SalesInvoiceCreate,
     SalesInvoiceUpdate
 )
+from app.core.feature_guard import (
+    FeatureGuard
+)
+
+from app.core.constants import (
+    FeatureCodes
+)
 
 from app.modules.sales_invoices.repository import (
     create_sales_invoice_repo,
@@ -43,6 +50,12 @@ def create_sales_invoice_journal(
     invoice,
     organization_id: int
 ):
+    
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.SALES
+    )
 
     accounts_receivable = (
         db.query(ChartOfAccount)
@@ -138,6 +151,12 @@ def create_sales_invoice_service(
     organization_id: int,
     user_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.SALES
+    )
+
 
     try:
 
@@ -293,6 +312,13 @@ def get_all_sales_invoices_service(
     limit: int,
     organization_id: int
 ):
+    
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.SALES
+    )
+
 
     skip = (page - 1) * limit
 
@@ -326,6 +352,13 @@ def get_single_sales_invoice_service(
     invoice_id: int,
     organization_id: int
 ):
+    
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.SALES
+    )
+
 
     invoice = get_sales_invoice_by_id_repo(
         db=db,
@@ -349,6 +382,13 @@ def update_sales_invoice_service(
     invoice_update: SalesInvoiceUpdate,
     organization_id: int
 ):
+    
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.SALES
+    )
+
 
     invoice = get_sales_invoice_by_id_repo(
         db=db,
@@ -375,6 +415,13 @@ def delete_sales_invoice_service(
     invoice_id: int,
     organization_id: int
 ):
+    
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.SALES
+    )
+
 
     invoice = get_sales_invoice_by_id_repo(
         db=db,

@@ -8,6 +8,12 @@ from app.modules.inventory.products.schema import (
     ProductCreate,
     ProductUpdate
 )
+from app.core.feature_guard import (
+    FeatureGuard
+)
+from app.core.constants import (
+    FeatureCodes
+)
 
 from app.modules.inventory.products.repository import (
     create_product_repo,
@@ -16,6 +22,9 @@ from app.modules.inventory.products.repository import (
     get_last_product_repo,
     update_product_repo,
     delete_product_repo
+)
+from app.core.usage_guard import (
+    UsageGuard
 )
 
 from app.modules.inventory.categories.model import Category
@@ -43,6 +52,26 @@ def create_product_service(
     product: ProductCreate,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.INVENTORY
+    )
+    current_product_count = (
+        db.query(Product)
+        .filter(
+            Product.organization_id == organization_id
+        )
+        .count()
+    )
+
+    UsageGuard.check_limit(
+        db=db,
+        organization_id=organization_id,
+        current_count=current_product_count,
+        limit_field="max_products",
+        resource_name="Product"
+    )
 
     category = db.query(Category).filter(
         Category.id == product.category_id,
@@ -109,6 +138,13 @@ def get_all_products_service(
     db: Session,
     organization_id: int
 ):
+    
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.INVENTORY
+    )
+
 
     return get_all_products_repo(
         db,
@@ -121,6 +157,11 @@ def get_product_by_id_service(
     product_id: int,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.INVENTORY
+    )
 
     product = get_product_by_id_repo(
         db,
@@ -144,6 +185,11 @@ def update_product_service(
     product_data: ProductUpdate,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.INVENTORY
+    )
 
     product = get_product_by_id_repo(
         db,
@@ -170,6 +216,11 @@ def delete_product_service(
     product_id: int,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.INVENTORY
+    )
 
     product = get_product_by_id_repo(
         db,

@@ -80,8 +80,24 @@ from app.modules.accounting.journal_entries.model import (
     JournalEntry,
     JournalEntryLine
 )
-
-# =========================
+from app.modules.subscriptions.plans.model import (
+    SubscriptionPlan
+)
+from app.modules.customer_payments.model import(
+    CustomerPayment
+)
+from app.modules.vendor_payments.model import(
+    VendorPayment
+)
+from app.modules.subscriptions.organization_subscriptions.model import (
+    OrganizationSubscription
+)
+from app.modules.subscriptions.features.model import (
+    Feature
+)
+from app.modules.subscriptions.plan_features.model import (
+    PlanFeature
+)
 # ALEMBIC CONFIG
 # =========================
 

@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from fastapi import Depends
+from fastapi import Depends, Query
 
 from sqlalchemy.orm import Session
 
@@ -17,7 +17,7 @@ from app.modules.customer_payments.schema import (
 )
 
 from app.modules.customer_payments.service import (
-    CustomerPaymentService
+    CustomerPaymentService,
 )
 
 router = APIRouter(
@@ -43,6 +43,27 @@ def create_customer_payment(
         organization_id=organization,
         user_id=current_user.id
     )
+
+@router.get("/")
+def get_vendors(
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, le=100),
+    db: Session = Depends(get_db),
+    organization_id: int = Depends(get_current_organization)
+):
+
+    vendors = CustomerPaymentService.get_all_payments(
+        db=db,
+        organization_id=organization_id,
+        page=page,
+        limit=limit
+    )
+
+    return {
+        "page": page,
+        "limit": limit,
+        "data": vendors
+    }
 
 @router.get(
     "/{payment_id}",

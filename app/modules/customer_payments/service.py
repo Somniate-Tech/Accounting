@@ -15,6 +15,22 @@ from app.modules.customer_payments.schema import (
 from app.modules.sales_invoices.model import (
     InvoiceStatus
 )
+from app.core.feature_guard import (
+    FeatureGuard
+)
+
+from app.core.constants import (
+    FeatureCodes
+)
+
+from app.modules.accounting.journal_entries.model import (
+    JournalEntry,
+    JournalEntryLine
+)
+
+from app.modules.accounting.chart_of_accounts.model import (
+    ChartOfAccount
+)
 
 
 class CustomerPaymentService:
@@ -26,6 +42,11 @@ class CustomerPaymentService:
         organization_id: int,
         user_id: int
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.CUSTOMERS
+        )
 
         invoice = (
             CustomerPaymentRepository.get_invoice(
@@ -90,8 +111,15 @@ class CustomerPaymentService:
             invoice=invoice
         )
 
+        create_customer_payment_journal(
+            db=db,
+            payment=payment,
+            organization_id=organization_id
+        )
+
+        db.commit()
+
         return payment
-    
 
     @staticmethod
     def get_all_payments(
@@ -100,6 +128,12 @@ class CustomerPaymentService:
         page: int,
         limit: int
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.CUSTOMERS
+        )
+
 
         skip = (page - 1) * limit
 
@@ -120,6 +154,12 @@ class CustomerPaymentService:
         payment_id: int,
         organization_id: int
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.CUSTOMERS
+        )
+
 
         payment = (
             CustomerPaymentRepository.get_payment_by_id(
@@ -145,6 +185,12 @@ class CustomerPaymentService:
         payment_data: CustomerPaymentUpdate,
         organization_id: int
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.CUSTOMERS
+        )
+
 
         payment = (
             CustomerPaymentRepository.get_payment_by_id(
@@ -179,3 +225,72 @@ class CustomerPaymentService:
         )
 
         return updated_payment
+    
+
+
+
+def create_customer_payment_journal(
+    db: Session,
+    payment,
+    organization_id: int
+):
+
+    cash_account = (
+        db.query(ChartOfAccount)
+        .filter(
+            ChartOfAccount.id == 3,
+            ChartOfAccount.organization_id == organization_id
+        )
+        .first()
+    )
+
+    accounts_receivable = (
+        db.query(ChartOfAccount)
+        .filter(
+            ChartOfAccount.id == 13,
+            ChartOfAccount.organization_id == organization_id
+        )
+        .first()
+    )
+
+    if not cash_account:
+        raise HTTPException(
+            status_code=404,
+            detail="Cash Account not found"
+        )
+
+    if not accounts_receivable:
+        raise HTTPException(
+            status_code=404,
+            detail="Accounts Receivable account not found"
+        )
+
+    journal_entry = JournalEntry(
+        organization_id=organization_id,
+        reference_type="CUSTOMER_PAYMENT",
+        reference_id=str(payment.id),
+        description=f"Customer Payment {payment.id}"
+    )
+
+    db.add(journal_entry)
+
+    db.flush()
+
+    cash_line = JournalEntryLine(
+        journal_entry_id=journal_entry.id,
+        account_id=cash_account.id,
+        debit=payment.amount,
+        credit=0,
+        description="Cash Received"
+    )
+
+    receivable_line = JournalEntryLine(
+        journal_entry_id=journal_entry.id,
+        account_id=accounts_receivable.id,
+        debit=0,
+        credit=payment.amount,
+        description="Accounts Receivable"
+    )
+
+    db.add(cash_line)
+    db.add(receivable_line)

@@ -139,6 +139,12 @@ class SalesInvoiceItem(Base):
         ForeignKey("sales_invoices.id")
     )
 
+    product_id = Column(
+        Integer,
+        ForeignKey("products.id"),
+        nullable=True
+    )
+
     item_name = Column(
         String,
         nullable=False
@@ -167,4 +173,8 @@ class SalesInvoiceItem(Base):
     invoice = relationship(
         "SalesInvoice",
         back_populates="items"
+    )
+
+    product = relationship(
+        "Product"
     )

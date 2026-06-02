@@ -27,6 +27,13 @@ from app.modules.sales_orders.repository import (
     update_sales_order_repo,
     delete_sales_order_repo
 )
+from app.core.feature_guard import (
+    FeatureGuard
+)
+
+from app.core.constants import (
+    FeatureCodes
+)
 
 
 def create_sales_order_service(
@@ -35,6 +42,11 @@ def create_sales_order_service(
     organization_id: int,
     user_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.SALES
+    )
     customer = (
         db.query(Customer)
         .filter(
@@ -81,6 +93,11 @@ def get_all_sales_orders_service(
     limit: int,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.SALES
+    )
     skip = (page - 1) * limit
 
     sales_orders = get_all_sales_orders_repo(
@@ -113,6 +130,11 @@ def get_single_sales_order_service(
     sales_order_id: int,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.SALES
+    )
     sales_order = get_sales_order_by_id_repo(
         db=db,
         sales_order_id=sales_order_id,
@@ -134,6 +156,11 @@ def update_sales_order_service(
     sales_order_update: SalesOrderUpdate,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.SALES
+    )
     sales_order = get_sales_order_by_id_repo(
         db=db,
         sales_order_id=sales_order_id,
@@ -158,6 +185,11 @@ def delete_sales_order_service(
     sales_order_id: int,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.SALES
+    )
     sales_order = get_sales_order_by_id_repo(
         db=db,
         sales_order_id=sales_order_id,

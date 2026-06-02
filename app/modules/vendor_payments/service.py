@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from fastapi import HTTPException
 
 from sqlalchemy.orm import Session
@@ -14,8 +16,14 @@ from app.modules.vendor_payments.schema import (
 from app.modules.bills.model import (
     BillPaymentStatus
 )
+from app.modules.accounting.journal_entries.model import (
+    JournalEntry,
+    JournalEntryLine
+)
 
-
+from app.modules.accounting.chart_of_accounts.model import (
+    ChartOfAccount
+)
 
 class VendorPaymentService:
 
@@ -42,14 +50,18 @@ class VendorPaymentService:
                 detail="Bill not found"
             )
 
-        if payment_data.amount <= 0:
+        payment_amount = Decimal(str(payment_data.amount))
+
+        if payment_amount <= Decimal("0"):
 
             raise HTTPException(
                 status_code=400,
                 detail="Payment amount must be greater than zero"
             )
 
-        if payment_data.amount > float(bill.due_amount):
+        bill_due_amount = bill.due_amount or Decimal("0")
+
+        if payment_amount > bill_due_amount:
 
             raise HTTPException(
                 status_code=400,
@@ -58,9 +70,9 @@ class VendorPaymentService:
 
         payment_dict = payment_data.model_dump()
 
-        payment_dict["organization_id"] = (
-            organization_id
-        )
+        payment_dict["amount"] = float(payment_amount)
+
+        payment_dict["organization_id"] = organization_id
 
         payment_dict["created_by"] = user_id
 
@@ -71,29 +83,35 @@ class VendorPaymentService:
             )
         )
 
-        bill.paid_amount += payment.amount
+        bill.paid_amount = (
+            bill.paid_amount or Decimal("0")
+        ) + payment_amount
 
-        bill.due_amount -= payment.amount
+        bill.due_amount = (
+            bill.due_amount or Decimal("0")
+        ) - payment_amount
 
-        if float(bill.due_amount) == 0:
+        if bill.due_amount == Decimal("0"):
 
-            bill.payment_status = (
-                BillPaymentStatus.PAID
-            )
+            bill.payment_status = BillPaymentStatus.PAID
 
         else:
 
-            bill.payment_status = (
-                BillPaymentStatus.PARTIALLY_PAID
-            )
+            bill.payment_status = BillPaymentStatus.PARTIALLY_PAID
 
         VendorPaymentRepository.update_bill(
             db=db,
             bill=bill
         )
+        create_vendor_payment_journal(
+            db=db,
+            payment=payment,
+            organization_id=organization_id
+        )
+
+        db.commit()
 
         return payment
-    
 
     @staticmethod
     def get_all_payments(
@@ -181,3 +199,71 @@ class VendorPaymentService:
         )
 
         return updated_payment
+    
+
+
+def create_vendor_payment_journal(
+    db: Session,
+    payment,
+    organization_id: int
+):
+
+    accounts_payable = (
+        db.query(ChartOfAccount)
+        .filter(
+            ChartOfAccount.id == 16,
+            ChartOfAccount.organization_id == organization_id
+        )
+        .first()
+    )
+
+    cash_account = (
+        db.query(ChartOfAccount)
+        .filter(
+            ChartOfAccount.id == 3,
+            ChartOfAccount.organization_id == organization_id
+        )
+        .first()
+    )
+
+    if not accounts_payable:
+        raise HTTPException(
+            status_code=404,
+            detail="Accounts Payable account not found"
+        )
+
+    if not cash_account:
+        raise HTTPException(
+            status_code=404,
+            detail="Cash Account not found"
+        )
+
+    journal_entry = JournalEntry(
+        organization_id=organization_id,
+        reference_type="VENDOR_PAYMENT",
+        reference_id=str(payment.id),
+        description=f"Vendor Payment #{payment.id}"
+    )
+
+    db.add(journal_entry)
+
+    db.flush()
+
+    payable_line = JournalEntryLine(
+        journal_entry_id=journal_entry.id,
+        account_id=accounts_payable.id,
+        debit=payment.amount,
+        credit=0,
+        description="Accounts Payable"
+    )
+
+    cash_line = JournalEntryLine(
+        journal_entry_id=journal_entry.id,
+        account_id=cash_account.id,
+        debit=0,
+        credit=payment.amount,
+        description="Cash Paid"
+    )
+
+    db.add(payable_line)
+    db.add(cash_line)

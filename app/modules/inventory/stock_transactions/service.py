@@ -17,13 +17,24 @@ from app.modules.inventory.stock_transactions.repository import (
 )
 
 from app.modules.inventory.products.model import Product
+from app.core.feature_guard import (
+    FeatureGuard
+)
 
+from app.core.constants import (
+    FeatureCodes
+)
 
 def create_stock_transaction_service(
     db: Session,
     transaction: StockTransactionCreate,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.INVENTORY
+    )
 
     product = db.query(Product).filter(
         Product.id == transaction.product_id,
@@ -104,6 +115,11 @@ def get_all_stock_transactions_service(
     db: Session,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.INVENTORY
+    )
 
     return get_all_stock_transactions_repo(
         db,
@@ -116,6 +132,11 @@ def get_product_stock_transactions_service(
     product_id: int,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.INVENTORY
+    )
 
     return get_product_stock_transactions_repo(
         db,

@@ -13,7 +13,13 @@ from app.modules.accounting.journal_entries.repository import (
 from app.modules.accounting.journal_entries.schema import (
     CreateJournalEntrySchema
 )
+from app.core.feature_guard import (
+    FeatureGuard
+)
 
+from app.core.constants import (
+    FeatureCodes
+)
 
 class JournalEntryService:
 
@@ -23,6 +29,11 @@ class JournalEntryService:
         organization_id: int,
         payload: CreateJournalEntrySchema
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.ACCOUNTING
+        )
 
         for line in payload.lines:
 
@@ -54,6 +65,12 @@ class JournalEntryService:
         db: Session,
         organization_id: int
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.ACCOUNTING
+        )
+
 
         return (
             JournalEntryRepository.get_all_entries(
@@ -68,6 +85,12 @@ class JournalEntryService:
         organization_id: int,
         entry_id: int
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.ACCOUNTING
+        )
+
 
         entry = (
             JournalEntryRepository.get_entry_by_id(

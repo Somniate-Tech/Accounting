@@ -483,11 +483,7 @@ class ReportRepository:
 
             db.query(
 
-                Product.id.label(
-                    "product_id"
-                ),
-
-                Product.name.label(
+                SalesInvoiceItem.item_name.label(
                     "product_name"
                 ),
 
@@ -499,20 +495,19 @@ class ReportRepository:
             )
 
             .join(
-                Product,
+                SalesInvoice,
 
-                Product.id
-                == SalesInvoiceItem.product_id
+                SalesInvoice.id
+                == SalesInvoiceItem.invoice_id
             )
 
             .filter(
-                SalesInvoiceItem.organization_id
+                SalesInvoice.organization_id
                 == organization_id
             )
 
             .group_by(
-                Product.id,
-                Product.name
+                SalesInvoiceItem.item_name
             )
 
             .order_by(
@@ -523,8 +518,6 @@ class ReportRepository:
 
             .all()
         )
-    
-
     @staticmethod
     def get_dead_stock_items(
         db: Session,
@@ -548,7 +541,7 @@ class ReportRepository:
                 ),
 
                 func.max(
-                    SalesInvoice.invoice_date
+                    SalesInvoice.created_at
                 ).label(
                     "last_sold_date"
                 )

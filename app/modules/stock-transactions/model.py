@@ -4,20 +4,17 @@ from sqlalchemy import (
     String,
     Float,
     ForeignKey,
-    DateTime,
-    Enum
+    DateTime
 )
 
 from sqlalchemy.sql import func
-
 from sqlalchemy.orm import relationship
-
-import enum
 
 from app.core.database import Base
 
-class SalesInvoiceItem(Base):
-    __tablename__ = "sales_invoice_items"
+
+class StockTransaction(Base):
+    __tablename__ = "stock_transactions"
 
     id = Column(
         Integer,
@@ -25,9 +22,10 @@ class SalesInvoiceItem(Base):
         index=True
     )
 
-    invoice_id = Column(
+    organization_id = Column(
         Integer,
-        ForeignKey("sales_invoices.id")
+        ForeignKey("organizations.id"),
+        nullable=False
     )
 
     product_id = Column(
@@ -36,34 +34,37 @@ class SalesInvoiceItem(Base):
         nullable=False
     )
 
-    item_name = Column(
+    warehouse_id = Column(
+        Integer,
+        ForeignKey("warehouses.id"),
+        nullable=True
+    )
+
+    transaction_type = Column(
         String,
         nullable=False
     )
 
     quantity = Column(
+        Float,
+        nullable=False
+    )
+
+    reference_type = Column(
+        String,
+        nullable=True
+    )
+
+    reference_id = Column(
         Integer,
-        nullable=False
+        nullable=True
     )
 
-    price = Column(
-        Float,
-        nullable=False
-    )
-
-    tax_percent = Column(
-        Float,
-        default=0
-    )
-
-    total = Column(
-        Float,
-        nullable=False
-    )
-
-    invoice = relationship(
-        "SalesInvoice",
-        back_populates="items"
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now()
     )
 
     product = relationship("Product")
+
+    warehouse = relationship("Warehouse")

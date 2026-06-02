@@ -189,8 +189,6 @@ class StockSummaryItem(BaseModel):
 
     product_name: str
 
-    warehouse_name: str
-
     current_stock: float
 
 

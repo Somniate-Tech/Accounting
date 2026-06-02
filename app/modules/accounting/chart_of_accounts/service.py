@@ -14,14 +14,21 @@ from app.modules.accounting.chart_of_accounts.schema import (
 from app.modules.accounting.chart_of_accounts.repository import (
     ChartOfAccountRepository
 )
+from app.core.feature_guard import (
+    FeatureGuard
+)
 
+from app.core.constants import (
+    FeatureCodes
+)
 
 class ChartOfAccountService:
 
     @staticmethod
     def generate_account_code(
         db: Session,
-        account_type: str
+        account_type: str,
+        organization_id: int
     ):
 
         type_prefix = {
@@ -39,13 +46,17 @@ class ChartOfAccountService:
 
         prefix = type_prefix.get(account_type)
 
-        latest_account = db.query(
-            ChartOfAccount
-        ).filter(
-            ChartOfAccount.account_type == account_type
-        ).order_by(
-            ChartOfAccount.account_code.desc()
-        ).first()
+        latest_account = (
+            db.query(ChartOfAccount)
+            .filter(
+                ChartOfAccount.account_type == account_type,
+                ChartOfAccount.organization_id == organization_id
+            )
+            .order_by(
+                ChartOfAccount.account_code.desc()
+            )
+            .first()
+        )
 
         if latest_account:
 
@@ -61,11 +72,17 @@ class ChartOfAccountService:
         organization_id: int,
         payload: CreateChartOfAccountSchema
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.ACCOUNTING
+        )
 
         generated_code = (
             ChartOfAccountService.generate_account_code(
                 db=db,
-                account_type=payload.account_type
+                account_type=payload.account_type,
+                organization_id=organization_id
             )
         )
 
@@ -83,6 +100,11 @@ class ChartOfAccountService:
         db: Session,
         organization_id: int
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.ACCOUNTING
+        )
 
         return (
             ChartOfAccountRepository.get_all_accounts(
@@ -97,6 +119,11 @@ class ChartOfAccountService:
         organization_id: int,
         account_id: int
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.ACCOUNTING
+        )
 
         account = (
             ChartOfAccountRepository.get_account_by_id(
@@ -122,6 +149,11 @@ class ChartOfAccountService:
         account_id: int,
         payload: UpdateChartOfAccountSchema
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.ACCOUNTING
+        )
 
         account = (
             ChartOfAccountRepository.get_account_by_id(
@@ -152,6 +184,11 @@ class ChartOfAccountService:
         organization_id: int,
         account_id: int
     ):
+        FeatureGuard.check_feature_access(
+            db=db,
+            organization_id=organization_id,
+            feature_code=FeatureCodes.ACCOUNTING
+        )
 
         account = (
             ChartOfAccountRepository.get_account_by_id(

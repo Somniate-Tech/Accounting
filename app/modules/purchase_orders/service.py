@@ -17,13 +17,24 @@ from app.modules.purchase_orders.repository import (
 )
 
 from app.modules.vendors.model import Vendor
+from app.core.feature_guard import (
+    FeatureGuard
+)
 
+from app.core.constants import (
+    FeatureCodes
+)
 
 def create_purchase_order_service(
     db: Session,
     purchase_order: PurchaseOrderCreate,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.PURCHASE
+    )
     vendor = (
         db.query(Vendor)
         .filter(
@@ -52,6 +63,12 @@ def get_all_purchase_orders_service(
     limit: int,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.PURCHASE
+    )
+
     skip = (page - 1) * limit
 
     purchase_orders = get_all_purchase_orders_repo(
@@ -84,6 +101,11 @@ def delete_purchase_order_service(
     po_code: str,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.PURCHASE
+    )
     purchase_order = get_purchase_order_by_code_repo(
         db=db,
         po_code=po_code,
@@ -112,6 +134,11 @@ def update_purchase_order_service(
     purchase_order_update: PurchaseOrderUpdate,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.PURCHASE
+    )
     purchase_order = get_purchase_order_by_code_repo(
         db=db,
         po_code=po_code,
