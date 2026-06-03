@@ -42,3 +42,45 @@ from app.modules.sales_invoices.model import(
     SalesInvoice,
     SalesInvoiceItem
 )
+
+from app.modules.accounting.chart_of_accounts.model import ChartOfAccount
+
+from app.modules.inventory.categories.model import (
+    Category
+)
+
+from app.modules.inventory.units.model import (
+    Unit
+)
+
+from app.modules.inventory.products.model import (
+    Product
+)
+
+from app.modules.inventory.stock_transactions.model import (
+    StockTransaction
+)
+
+from app.modules.inventory.warehouses.model import (
+    Warehouse
+)
+
+from app.modules.accounting.journal_entries.model import (
+    JournalEntry,
+    JournalEntryLine
+)
+
+from app.modules.subscriptions.plans.model import (
+    SubscriptionPlan
+)
+
+from app.modules.subscriptions.organization_subscriptions.model import (
+    OrganizationSubscription
+)
+from app.modules.subscriptions.features.model import (
+    Feature
+)
+
+from app.modules.subscriptions.plan_features.model import (
+    PlanFeature
+)

@@ -34,6 +34,12 @@ class StockTransaction(Base):
         nullable=False
     )
 
+    warehouse_id = Column(
+        Integer,
+        ForeignKey("warehouses.id"),
+        nullable=True
+    )
+
     transaction_type = Column(
         String,
         nullable=False

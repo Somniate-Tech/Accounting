@@ -7,6 +7,12 @@ from app.modules.inventory.categories.schema import (
     CategoryCreate,
     CategoryUpdate
 )
+from app.core.feature_guard import (
+    FeatureGuard
+)
+from app.core.constants import (
+    FeatureCodes
+)
 
 from app.modules.inventory.categories.repository import (
     create_category_repo,
@@ -22,6 +28,12 @@ def create_category_service(
     category: CategoryCreate,
     organization_id: int
 ):
+    
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.INVENTORY
+    )
 
     existing_category = db.query(Category).filter(
         Category.name == category.name,
@@ -50,6 +62,11 @@ def get_all_categories_service(
     db: Session,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.INVENTORY
+    )
     return get_all_categories_repo(
         db,
         organization_id
@@ -61,6 +78,11 @@ def get_category_by_id_service(
     category_id: int,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.INVENTORY
+    )
 
     category = get_category_by_id_repo(
         db,
@@ -83,6 +105,11 @@ def update_category_service(
     category_data: CategoryUpdate,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.INVENTORY
+    )
 
     category = get_category_by_id_repo(
         db,
@@ -108,6 +135,11 @@ def delete_category_service(
     category_id: int,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.INVENTORY
+    )
 
     category = get_category_by_id_repo(
         db,

@@ -107,13 +107,15 @@ def get_all_vendors_repo(
 
 def get_vendor_by_code_repo(
     db: Session,
-    vendor_code: str
+    vendor_code: str,
+    organization_id: int
 ):
 
     return (
         db.query(Vendor)
         .filter(
-            Vendor.vendor_code == vendor_code
+            Vendor.vendor_code == vendor_code,
+            Vendor.organization_id == organization_id
         )
         .first()
     )

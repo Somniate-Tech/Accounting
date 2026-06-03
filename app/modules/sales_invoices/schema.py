@@ -9,15 +9,23 @@ from enum import Enum
 
 
 class InvoiceStatus(str, Enum):
+
     DRAFT = "DRAFT"
+
     SENT = "SENT"
+
     PARTIALLY_PAID = "PARTIALLY_PAID"
+
     PAID = "PAID"
+
     OVERDUE = "OVERDUE"
+
     CANCELLED = "CANCELLED"
 
 
 class SalesInvoiceItemBase(BaseModel):
+
+    product_id: int
 
     item_name: str
 
@@ -43,6 +51,7 @@ class SalesInvoiceItemResponse(
     total: float
 
     class Config:
+
         from_attributes = True
 
 
@@ -109,4 +118,5 @@ class SalesInvoiceResponse(BaseModel):
     ]
 
     class Config:
+
         from_attributes = True

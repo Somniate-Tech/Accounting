@@ -21,6 +21,22 @@ from app.modules.vendors.model import Vendor
 from app.modules.purchase_orders.model import (
     PurchaseOrder
 )
+from app.core.feature_guard import (
+    FeatureGuard
+)
+
+from app.core.constants import (
+    FeatureCodes
+)
+
+from app.modules.accounting.journal_entries.model import (
+    JournalEntry,
+    JournalEntryLine
+)
+
+from app.modules.accounting.chart_of_accounts.model import (
+    ChartOfAccount
+)
 
 
 def create_bill_service(
@@ -28,6 +44,11 @@ def create_bill_service(
     bill: BillCreate,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.PURCHASE
+    )
     vendor = (
         db.query(Vendor)
         .filter(
@@ -59,12 +80,22 @@ def create_bill_service(
                 status_code=404,
                 detail="Purchase Order not found"
             )
-
-    return create_bill_repo(
+        
+    created_bill = create_bill_repo(
         db=db,
         bill=bill,
         organization_id=organization_id
     )
+
+    create_bill_journal(
+        db=db,
+        bill=created_bill,
+        organization_id=organization_id
+    )
+
+    db.commit()
+
+    return created_bill
 
 
 def get_all_bills_service(
@@ -73,6 +104,11 @@ def get_all_bills_service(
     limit: int,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.PURCHASE
+    )
     skip = (page - 1) * limit
 
     bills = get_all_bills_repo(
@@ -105,6 +141,11 @@ def get_bill_by_code_service(
     bill_code: str,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.PURCHASE
+    )
     bill = get_bill_by_code_repo(
         db=db,
         bill_code=bill_code,
@@ -125,6 +166,11 @@ def delete_bill_service(
     bill_code: str,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.PURCHASE
+    )
     bill = get_bill_by_code_repo(
         db=db,
         bill_code=bill_code,
@@ -153,6 +199,11 @@ def update_bill_service(
     bill_update: BillUpdate,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.PURCHASE
+    )
     bill = get_bill_by_code_repo(
         db=db,
         bill_code=bill_code,
@@ -171,3 +222,70 @@ def update_bill_service(
         bill_update=bill_update,
         organization_id=organization_id
     )
+
+
+def create_bill_journal(
+    db: Session,
+    bill,
+    organization_id: int
+):
+
+    purchase_expense = (
+        db.query(ChartOfAccount)
+        .filter(
+            ChartOfAccount.id == 17,
+            ChartOfAccount.organization_id == organization_id
+        )
+        .first()
+    )
+
+    accounts_payable = (
+        db.query(ChartOfAccount)
+        .filter(
+            ChartOfAccount.id == 16,
+            ChartOfAccount.organization_id == organization_id
+        )
+        .first()
+    )
+
+    if not purchase_expense:
+        raise HTTPException(
+            status_code=404,
+            detail="Purchase Expense account not found"
+        )
+
+    if not accounts_payable:
+        raise HTTPException(
+            status_code=404,
+            detail="Accounts Payable account not found"
+        )
+
+    journal_entry = JournalEntry(
+        organization_id=organization_id,
+        reference_type="BILL",
+        reference_id=str(bill.id),
+        description=f"Bill {bill.bill_code}"
+    )
+
+    db.add(journal_entry)
+
+    db.flush()
+
+    expense_line = JournalEntryLine(
+        journal_entry_id=journal_entry.id,
+        account_id=purchase_expense.id,
+        debit=bill.total_amount,
+        credit=0,
+        description="Purchase Expense"
+    )
+
+    payable_line = JournalEntryLine(
+        journal_entry_id=journal_entry.id,
+        account_id=accounts_payable.id,
+        debit=0,
+        credit=bill.total_amount,
+        description="Accounts Payable"
+    )
+
+    db.add(expense_line)
+    db.add(payable_line)

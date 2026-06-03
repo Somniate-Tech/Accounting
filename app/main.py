@@ -46,7 +46,39 @@ from app.modules.inventory.stock_transactions.routes import (
 from app.modules.inventory.warehouses.routes import(
     router as warehouse_router
 )
-
+from app.modules.accounting.chart_of_accounts.routes import (
+    router as chart_of_accounts_router
+)
+from app.modules.accounting.journal_entries.routes import (
+    router as journal_entries_router
+)
+from app.modules.accounting.general_ledger.routes import (
+    router as general_ledger_router
+)
+from app.modules.reports.routes import(
+    router as reports_router
+)
+from app.modules.customer_payments.routes import (
+    router as customer_payment_router
+)
+from app.modules.vendor_payments.routes import (
+    router as vendor_payment_router
+)
+from app.modules.subscriptions.plans.routes import (
+    router as subscription_plan_router
+)
+from app.modules.subscriptions.organization_subscriptions.routes import(
+    router as organization_subscription_router
+)
+from app.modules.subscriptions.features.routes import (
+    router as feature_router
+)
+from app.modules.subscriptions.plan_features.routes import (
+    router as plan_feature_router
+)
+from app.modules.admin.routes import (
+    router as admin_router
+)
 from fastapi.middleware.cors import CORSMiddleware
 
 from fastapi.staticfiles import StaticFiles
@@ -97,8 +129,17 @@ app.include_router(unit_router)
 app.include_router(products_router)
 app.include_router(stock_transaction_router)
 app.include_router(warehouse_router)
-app.include_router(auth_router)
-
+app.include_router(chart_of_accounts_router)
+app.include_router(journal_entries_router)
+app.include_router(general_ledger_router)
+app.include_router(reports_router)
+app.include_router(customer_payment_router)
+app.include_router(vendor_payment_router)
+app.include_router(subscription_plan_router)
+app.include_router(organization_subscription_router)
+app.include_router(feature_router)
+app.include_router(plan_feature_router)
+app.include_router(admin_router)
 
 @app.get("/")
 def home():

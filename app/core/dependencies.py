@@ -17,7 +17,9 @@ from app.modules.organizations.repository import (
 )
 
 from app.modules.users.model import User
-
+from app.modules.organizations.model import (
+    Organization
+)
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="/auth/login"
@@ -70,9 +72,11 @@ def get_current_organization(
     db: Session = Depends(get_db)
 ):
 
-    organization_member = get_user_organization_repo(
-        db,
-        current_user.id
+    organization_member = (
+        get_user_organization_repo(
+            db,
+            current_user.id
+        )
     )
 
     if not organization_member:
@@ -82,4 +86,30 @@ def get_current_organization(
             detail="Organization not found"
         )
 
-    return organization_member.organization_id
+    organization = (
+        db.query(Organization)
+        .filter(
+            Organization.id ==
+            organization_member.organization_id
+        )
+        .first()
+    )
+
+    if not organization:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Organization not found"
+        )
+
+    if not organization.is_active:
+
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Organization has been deactivated. "
+                "Please contact support."
+            )
+        )
+
+    return organization.id

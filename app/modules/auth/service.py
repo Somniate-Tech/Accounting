@@ -32,7 +32,15 @@ from app.modules.organization_members.model import (
 from app.modules.organizations.model import (
     Organization
 )
+from datetime import datetime, timedelta
 
+from app.modules.subscriptions.plans.model import (
+    SubscriptionPlan
+)
+
+from app.modules.subscriptions.organization_subscriptions.model import (
+    OrganizationSubscription
+)
 
 async def send_otp_service(
     db: Session,
@@ -131,6 +139,40 @@ def register_service(
         organization_id=organization.id,
         user_id=user.id
     )
+    starter_plan = (
+        db.query(SubscriptionPlan)
+        .filter(
+            SubscriptionPlan.code == "STARTER",
+            SubscriptionPlan.is_active == True
+        )
+        .first()
+    )
+
+    if not starter_plan:
+
+        raise HTTPException(
+            status_code=500,
+            detail="Starter plan not configured"
+        )
+
+    trial_subscription = OrganizationSubscription(
+        organization_id=organization.id,
+
+        plan_id=starter_plan.id,
+
+        status="ACTIVE",
+
+        start_date=datetime.utcnow(),
+
+        end_date=datetime.utcnow() + timedelta(days=30),
+
+        is_trial=True
+    )
+
+    db.add(trial_subscription)
+
+    db.commit()
+    db.refresh(trial_subscription)
 
     return {
         "message": "Account created successfully"

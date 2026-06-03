@@ -27,7 +27,8 @@ def get_all_products_repo(
 ):
 
     return db.query(Product).filter(
-        Product.organization_id == organization_id
+        Product.organization_id == organization_id,
+        Product.is_active == True
     ).all()
 
 
@@ -39,7 +40,8 @@ def get_product_by_id_repo(
 
     return db.query(Product).filter(
         Product.id == product_id,
-        Product.organization_id == organization_id
+        Product.organization_id == organization_id,
+        Product.is_active == True
     ).first()
 
 
@@ -55,17 +57,27 @@ def get_product_by_sku_repo(
     ).first()
 
 
+def get_last_product_repo(
+    db: Session
+):
+
+    return db.query(Product).order_by(
+        Product.id.desc()
+    ).first()
+
+
 def update_product_repo(
     db: Session,
     product_obj: Product,
     product_data: ProductUpdate
 ):
 
-    update_data = product_data.dict(
+    update_data = product_data.model_dump(
         exclude_unset=True
     )
 
     for key, value in update_data.items():
+
         setattr(product_obj, key, value)
 
     db.commit()
@@ -80,6 +92,10 @@ def delete_product_repo(
     product_obj: Product
 ):
 
-    db.delete(product_obj)
+    product_obj.is_active = False
 
     db.commit()
+
+    db.refresh(product_obj)
+
+    return product_obj

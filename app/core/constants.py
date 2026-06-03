@@ -1,0 +1,28 @@
+class FeatureCodes:
+
+    CASHBOOK = "CASHBOOK"
+
+    CUSTOMERS = "CUSTOMERS"
+
+    VENDORS = "VENDORS"
+
+    INVENTORY = "INVENTORY"
+
+    SALES = "SALES"
+
+    PURCHASE = "PURCHASE"
+
+    REPORTS = "REPORTS"
+
+    ACCOUNTING = "ACCOUNTING"
+
+    MULTI_WAREHOUSE = "MULTI_WAREHOUSE"
+
+
+class UserRoles:
+
+    SUPER_ADMIN = "SUPER_ADMIN"
+
+    OWNER = "OWNER"
+
+    MEMBER = "MEMBER"

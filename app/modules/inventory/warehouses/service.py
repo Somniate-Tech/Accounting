@@ -18,13 +18,25 @@ from app.modules.inventory.warehouses.repository import (
     update_warehouse_repo,
     delete_warehouse_repo
 )
+from app.core.feature_guard import (
+    FeatureGuard
+)
 
+from app.core.constants import (
+    FeatureCodes
+)
 
 def create_warehouse_service(
     db: Session,
     warehouse: WarehouseCreate,
     organization_id: int
 ):
+    
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.MULTI_WAREHOUSE
+)
 
     existing_code = get_warehouse_by_code_repo(
         db,
@@ -58,6 +70,12 @@ def get_all_warehouses_service(
     db: Session,
     organization_id: int
 ):
+    
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.MULTI_WAREHOUSE
+)
 
     return get_all_warehouses_repo(
         db,
@@ -70,6 +88,11 @@ def get_warehouse_by_id_service(
     warehouse_id: int,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.MULTI_WAREHOUSE
+)
 
     warehouse = get_warehouse_by_id_repo(
         db,
@@ -93,6 +116,11 @@ def update_warehouse_service(
     warehouse_data: WarehouseUpdate,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.MULTI_WAREHOUSE
+)
 
     warehouse = get_warehouse_by_id_repo(
         db,
@@ -134,6 +162,11 @@ def delete_warehouse_service(
     warehouse_id: int,
     organization_id: int
 ):
+    FeatureGuard.check_feature_access(
+        db=db,
+        organization_id=organization_id,
+        feature_code=FeatureCodes.MULTI_WAREHOUSE
+)
 
     warehouse = get_warehouse_by_id_repo(
         db,

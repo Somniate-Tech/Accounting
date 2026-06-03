@@ -3,7 +3,8 @@ from sqlalchemy import (
     Integer,
     String,
     ForeignKey,
-    DateTime
+    DateTime,
+    Boolean,
 )
 
 from sqlalchemy.sql import func
@@ -46,6 +47,12 @@ class Organization(Base):
     created_by = Column(
         Integer,
         ForeignKey("users.id")
+    )
+
+    is_active = Column(
+    Boolean,
+    nullable=False,
+    default=True
     )
 
     created_at = Column(

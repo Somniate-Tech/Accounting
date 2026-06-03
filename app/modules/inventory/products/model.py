@@ -45,7 +45,8 @@ class Product(Base):
 
     sku = Column(
         String,
-        nullable=False
+        nullable=True,
+        unique=True
     )
 
     barcode = Column(
