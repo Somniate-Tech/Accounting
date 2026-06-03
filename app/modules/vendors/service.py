@@ -56,8 +56,7 @@ def create_vendor_service(
     existing_email = (
         db.query(Vendor)
         .filter(
-            Vendor.email == vendor.email,
-            Vendor.organization_id == organization_id
+            Vendor.email == vendor.email
         )
         .first()
     )
@@ -67,6 +66,18 @@ def create_vendor_service(
         raise HTTPException(
             status_code=400,
             detail="Email already exists"
+        )
+
+    existing_gst = (
+        db.query(Vendor)
+        .filter(Vendor.gst_number == vendor.gst_number)
+        .first()
+    )
+
+    if existing_gst:
+        raise HTTPException(
+            status_code=400,
+            detail="GST number already exists"
         )
 
     return create_vendor_repo(
