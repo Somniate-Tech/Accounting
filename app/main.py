@@ -10,6 +10,9 @@ from app.modules.vendors.routes import router as vendor_router
 from app.modules.auth.routes import router as auth_router
 
 # Routers links
+from app.modules.auth.routes import(
+    router as auth_router
+)
 from app.modules.bills.routes import (
     router as bill_router
 )
@@ -119,6 +122,7 @@ app.add_middleware(
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # Routers
+app.include_router(auth_router)
 app.include_router(vendor_router)
 app.include_router(purchase_order_router)
 app.include_router(bill_router)
