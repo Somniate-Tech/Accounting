@@ -79,6 +79,9 @@ from app.modules.subscriptions.plan_features.routes import (
 from app.modules.admin.routes import (
     router as admin_router
 )
+from app.modules.subscriptions.subscription_payments.routes import (
+    router as subscription_payment_router
+)
 from fastapi.middleware.cors import CORSMiddleware
 
 from fastapi.staticfiles import StaticFiles
@@ -140,6 +143,7 @@ app.include_router(organization_subscription_router)
 app.include_router(feature_router)
 app.include_router(plan_feature_router)
 app.include_router(admin_router)
+app.include_router(subscription_payment_router)
 
 @app.get("/")
 def home():

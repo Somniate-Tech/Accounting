@@ -84,3 +84,6 @@ from app.modules.subscriptions.features.model import (
 from app.modules.subscriptions.plan_features.model import (
     PlanFeature
 )
+from app.modules.subscriptions.subscription_payments.model import (
+    SubscriptionPayment
+)
