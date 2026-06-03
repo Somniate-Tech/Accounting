@@ -71,7 +71,10 @@ def get_subscription_payments(
 )
 def get_subscription_payment(
     payment_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    organization_id: int = Depends(
+        get_current_organization
+    )
 ):
     return get_subscription_payment_service(
         db,
