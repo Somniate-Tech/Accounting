@@ -75,12 +75,14 @@ def get_vendors(
 @router.get("/{vendor_code}")
 def get_single_vendor(
     vendor_code: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    organization_id: int = Depends(get_current_organization)
 ):
 
     vendor = get_vendor_by_code_service(
         db=db,
-        vendor_code=vendor_code
+        vendor_code=vendor_code,
+        organization_id=organization_id,
     )
 
     return vendor
@@ -90,13 +92,15 @@ def get_single_vendor(
 def update_vendor(
     vendor_code: str,
     vendor_update: VendorUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    organization_id: int = Depends(get_current_organization)
 ):
 
     updated_vendor = update_vendor_service(
         db=db,
         vendor_code=vendor_code,
-        vendor_update=vendor_update
+        vendor_update=vendor_update,
+        organization_id=organization_id,
     )
 
     return {
@@ -108,10 +112,12 @@ def update_vendor(
 @router.delete("/{vendor_code}")
 def delete_vendor(
     vendor_code: str,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    organization_id: int = Depends(get_current_organization)
 ):
 
     return delete_vendor_service(
         db=db,
-        vendor_code=vendor_code
+        vendor_code=vendor_code,
+        organization_id=organization_id,
     )

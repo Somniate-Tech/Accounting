@@ -12,6 +12,7 @@ from app.modules.subscriptions.plan_features.schema import (
 from app.modules.subscriptions.plan_features.service import (
     PlanFeatureService
 )
+from app.core.admin_guard import (get_current_super_admin)
 
 router = APIRouter(
     prefix="/plan-features",
@@ -25,7 +26,10 @@ router = APIRouter(
 )
 def create_plan_feature(
     payload: PlanFeatureCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_admin = Depends(
+        get_current_super_admin
+    )
 ):
 
     return (
@@ -41,7 +45,10 @@ def create_plan_feature(
     response_model=list[PlanFeatureResponse]
 )
 def get_all_plan_features(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_admin = Depends(
+        get_current_super_admin
+    )
 ):
 
     return (
@@ -57,7 +64,10 @@ def get_all_plan_features(
 )
 def get_plan_features(
     plan_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_admin = Depends(
+        get_current_super_admin
+    )
 ):
 
     return (

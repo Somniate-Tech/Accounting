@@ -176,7 +176,7 @@ def login(
     return login_service(
         db,
         payload.email,
-        payload.password
+        payload.password,
     )
 
 
@@ -187,7 +187,8 @@ def get_me(
 
     return {
         "id": current_user.id,
-        "email": current_user.email
+        "email": current_user.email,
+        "role": current_user.role
     }
 
 

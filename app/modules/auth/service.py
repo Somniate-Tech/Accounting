@@ -252,7 +252,9 @@ def login_service(
 
             "id": user.id,
 
-            "email": user.email
+            "email": user.email,
+
+            "role": user.role,
         },
 
         "organization": {

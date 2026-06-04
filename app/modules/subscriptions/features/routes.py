@@ -12,6 +12,9 @@ from app.modules.subscriptions.features.schema import (
 from app.modules.subscriptions.features.service import (
     FeatureService
 )
+from app.core.admin_guard import (
+    get_current_super_admin
+)
 
 router = APIRouter(
     prefix="/features",
@@ -25,7 +28,10 @@ router = APIRouter(
 )
 def create_feature(
     payload: FeatureCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_admin = Depends(
+        get_current_super_admin
+    )
 ):
 
     return (
@@ -41,7 +47,10 @@ def create_feature(
     response_model=list[FeatureResponse]
 )
 def get_all_features(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_admin = Depends(
+        get_current_super_admin
+    )
 ):
 
     return (
@@ -57,7 +66,10 @@ def get_all_features(
 )
 def get_feature_by_id(
     feature_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_admin = Depends(
+        get_current_super_admin
+    )
 ):
 
     return (
