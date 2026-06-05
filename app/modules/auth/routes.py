@@ -15,7 +15,9 @@ from app.modules.auth.schema import (
     SendOTPSchema,
     VerifyOTPSchema,
     RegisterSchema,
-    LoginSchema
+    LoginSchema,
+    ForgotPasswordSchema,
+    ResetPasswordSchema,
 )
 
 from app.core.dependencies import (
@@ -29,7 +31,9 @@ from app.modules.auth.service import (
     send_otp_service,
     verify_otp_service,
     register_service,
-    login_service
+    login_service,
+    forgot_password_service,
+    reset_password_service
 )
 from sqlalchemy.orm import joinedload
 
@@ -263,3 +267,29 @@ def get_profile(
             "role": organization_member.role
         }
     }
+
+
+@router.post("/forgot-password")
+async def forgot_password(
+    payload: ForgotPasswordSchema,
+    db: Session = Depends(get_db)
+):
+
+    return await forgot_password_service(
+        db,
+        payload.email
+    )
+
+
+@router.post("/reset-password")
+def reset_password(
+    payload: ResetPasswordSchema,
+    db: Session = Depends(get_db)
+):
+
+    return reset_password_service(
+        db,
+        payload.email,
+        payload.otp,
+        payload.new_password
+    )

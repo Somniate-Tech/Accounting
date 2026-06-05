@@ -6,7 +6,8 @@ from app.modules.auth.repository import (
     get_user_by_email_repo,
     create_user_repo,
     create_organization_repo,
-    create_organization_member_repo
+    create_organization_member_repo,
+    update_user_password_repo,
 )
 
 from app.modules.auth.utils import (
@@ -275,4 +276,73 @@ def login_service(
 
             "created_at": organization.created_at
         }
+    }
+
+
+async def forgot_password_service(
+    db: Session,
+    email: str
+):
+
+    user = get_user_by_email_repo(
+        db,
+        email
+    )
+
+    if not user:
+
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+
+    await send_otp_email(email)
+
+    return {
+        "message": "OTP sent successfully"
+    }
+
+def reset_password_service(
+    db: Session,
+    email: str,
+    otp: str,
+    new_password: str
+):
+
+    is_valid = verify_otp(
+        email,
+        otp
+    )
+
+    if not is_valid:
+
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid or expired OTP"
+        )
+
+    user = get_user_by_email_repo(
+        db,
+        email
+    )
+
+    if not user:
+
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+
+    hashed_password = hash_password(
+        new_password
+    )
+
+    update_user_password_repo(
+        db,
+        user,
+        hashed_password
+    )
+
+    return {
+        "message": "Password reset successfully"
     }

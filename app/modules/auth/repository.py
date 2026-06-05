@@ -90,3 +90,17 @@ def create_organization_member_repo(
     db.refresh(member)
 
     return member
+
+
+def update_user_password_repo(
+    db: Session,
+    user: User,
+    password: str
+):
+    user.password = password
+
+    db.commit()
+
+    db.refresh(user)
+
+    return user

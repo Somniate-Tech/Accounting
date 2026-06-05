@@ -40,3 +40,13 @@ class LoginSchema(BaseModel):
     email: EmailStr
 
     password: str
+
+
+class ForgotPasswordSchema(BaseModel):
+    email: str
+
+
+class ResetPasswordSchema(BaseModel):
+    email: str
+    otp: str
+    new_password: str
