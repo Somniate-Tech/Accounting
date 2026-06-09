@@ -13,7 +13,7 @@ from app.modules.subscriptions.plans.service import (
     SubscriptionPlanService,
     SubscriptionPlanUpdate
 )
-
+from app.core.admin_guard import (get_current_super_admin)
 router = APIRouter(
     prefix="/subscription-plans",
     tags=["Subscription Plans"]
@@ -26,7 +26,10 @@ router = APIRouter(
 )
 def create_plan(
     payload: SubscriptionPlanCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_admin = Depends(
+        get_current_super_admin
+    )
 ):
 
     return SubscriptionPlanService.create_plan(
@@ -54,7 +57,7 @@ def get_all_plans(
 )
 def get_plan_by_id(
     plan_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
 
     return SubscriptionPlanService.get_plan_by_id(
@@ -70,7 +73,10 @@ def get_plan_by_id(
 def update_plan(
     plan_id: int,
     payload: SubscriptionPlanUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_admin = Depends(
+        get_current_super_admin
+    )
 ):
 
     return (
@@ -86,7 +92,10 @@ def update_plan(
 )
 def activate_plan(
     plan_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_admin = Depends(
+        get_current_super_admin
+    )
 ):
 
     return (
@@ -102,7 +111,10 @@ def activate_plan(
 )
 def deactivate_plan(
     plan_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_admin = Depends(
+        get_current_super_admin
+    )
 ):
 
     return (

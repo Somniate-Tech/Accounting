@@ -835,8 +835,13 @@ class ReportService:
 
             if row.due_date:
 
+                due_date = row.due_date
+
+                if isinstance(due_date, datetime):
+                    due_date = due_date.date()
+
                 overdue_days = (
-                    today - row.due_date
+                    today - due_date
                 ).days
 
             else:
@@ -992,8 +997,13 @@ class ReportService:
 
             if row.due_date:
 
+                due_date = row.due_date
+
+                if isinstance(due_date, datetime):
+                    due_date = due_date.date()
+
                 overdue_days = (
-                    today - row.due_date
+                    today - due_date
                 ).days
 
             else:

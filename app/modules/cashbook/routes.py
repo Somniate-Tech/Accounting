@@ -1,7 +1,12 @@
+from decimal import Decimal
+from datetime import date
 from fastapi import (
     APIRouter,
     Depends,
-    Query
+    Query,
+    UploadFile,
+    File,
+    Form
 )
 
 from sqlalchemy.orm import Session
@@ -11,7 +16,7 @@ from app.core.database import get_db
 from app.core.dependencies import (
     get_current_user
 )
-
+from app.core.file_upload import save_file
 from app.modules.cashbook.schema import (
     CashbookEntryCreate,
     CashbookEntryUpdate
@@ -30,13 +35,36 @@ router = APIRouter(
     tags=["Cashbook"]
 )
 
-
 @router.post("/")
-def create_cashbook_entry(
-    entry: CashbookEntryCreate,
+async def create_cashbook_entry(
+    entry_type: str = Form(...),
+    amount: Decimal = Form(...),
+    title: str = Form(...),
+    notes: str = Form(None),
+    payment_method: str = Form(...),
+    transaction_date: date = Form(...),
+    attachment: UploadFile = File(None),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
+
+    attachment_url = None
+
+    if attachment:
+        attachment_url = await save_file(
+            attachment
+        )
+
+    entry = CashbookEntryCreate(
+        entry_type=entry_type,
+        amount=amount,
+        title=title,
+        notes=notes,
+        payment_method=payment_method,
+        transaction_date=transaction_date,
+        attachment_url=attachment_url
+    )
+
     entry_data = create_cashbook_entry_service(
         db=db,
         entry=entry,
@@ -47,7 +75,6 @@ def create_cashbook_entry(
         "message": "Cashbook entry created successfully",
         "data": entry_data
     }
-
 
 @router.get("/")
 def get_cashbook_entries(

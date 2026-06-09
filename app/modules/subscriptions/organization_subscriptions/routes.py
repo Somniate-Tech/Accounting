@@ -17,7 +17,7 @@ from app.modules.subscriptions.organization_subscriptions.schema import (
 from app.modules.subscriptions.organization_subscriptions.service import (
     OrganizationSubscriptionService
 )
-
+from app.core.admin_guard import (get_current_super_admin)
 router = APIRouter(
     prefix="/organization-subscriptions",
     tags=["Organization Subscriptions"]
@@ -34,7 +34,13 @@ router = APIRouter(
 )
 def create_subscription(
     payload: OrganizationSubscriptionCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_admin = Depends(
+        get_current_super_admin
+    ),
+    current_user: User = Depends(
+        get_current_user
+    ),
 ):
 
     return (
@@ -50,7 +56,10 @@ def create_subscription(
     response_model=list[OrganizationSubscriptionResponse]
 )
 def get_all_subscriptions(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_admin = Depends(
+        get_current_super_admin
+    )
 ):
 
     return (
@@ -169,6 +178,7 @@ def renew_subscription(
         get_current_user
     ),
 
+
     db: Session = Depends(get_db)
 ):
 
@@ -214,7 +224,13 @@ def cancel_subscription(
 )
 def get_subscription_by_id(
     subscription_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_admin = Depends(
+        get_current_super_admin
+    ),
+    current_user: User = Depends(
+        get_current_user
+    ),
 ):
 
     return (
