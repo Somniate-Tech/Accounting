@@ -1,7 +1,6 @@
 from sqlalchemy.orm import Session
 
 from fastapi import HTTPException, status
-
 from app.modules.customers.model import Customer
 
 from app.modules.customers.schema import (
@@ -26,6 +25,7 @@ from app.core.constants import (
 from app.core.usage_guard import (
     UsageGuard
 )
+from app.modules.customer_payments.model import CustomerPayment
 
 def create_customer_service(
     db: Session,
@@ -164,6 +164,10 @@ def update_customer_service(
     )
 
 
+
+
+
+
 def delete_customer_service(
     db: Session,
     customer_id: int,
@@ -174,6 +178,7 @@ def delete_customer_service(
         organization_id=organization_id,
         feature_code=FeatureCodes.CUSTOMERS
     )
+
     customer = get_single_customer_repo(
         db,
         customer_id,
@@ -184,6 +189,23 @@ def delete_customer_service(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Customer not found"
+        )
+
+    payment_exists = (
+        db.query(CustomerPayment)
+        .filter(
+            CustomerPayment.customer_id == customer.id
+        )
+        .first()
+    )
+
+    if payment_exists:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Customer cannot be deleted because "
+                "customer payment records exist."
+            )
         )
 
     delete_customer_repo(
