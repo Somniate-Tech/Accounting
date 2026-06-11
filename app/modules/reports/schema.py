@@ -275,4 +275,16 @@ class WarehouseReportItem(BaseModel):
 
 class WarehouseReportResponse(BaseModel):
 
+    warehouse_id: int
+
+    warehouse_name: str
+
+    total_products: int
+
+    total_stock: float
+
+    inventory_value: float
+
+class WarehouseReportResponse(BaseModel):
+
     items: list[WarehouseReportItem]

@@ -13,6 +13,8 @@ class ProductBase(BaseModel):
 
     unit_id: int
 
+    warehouse_id: int
+
     barcode: Optional[str] = None
 
     purchase_price: Decimal = 0
@@ -46,6 +48,8 @@ class ProductUpdate(BaseModel):
 
     selling_price: Optional[Decimal] = None
 
+    warehouse_id: Optional[int] = None
+
     gst_percent: Optional[Decimal] = None
 
     opening_stock: Optional[Decimal] = None
@@ -66,6 +70,8 @@ class ProductResponse(ProductBase):
     organization_id: int
 
     sku: str
+
+    warehouse_id: int
 
     current_stock: Decimal
 

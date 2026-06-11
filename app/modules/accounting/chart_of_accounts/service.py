@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.modules.accounting.chart_of_accounts.model import (
@@ -199,15 +199,26 @@ class ChartOfAccountService:
         )
 
         if not account:
-
             raise HTTPException(
                 status_code=404,
                 detail="Account not found"
             )
 
-        return (
-            ChartOfAccountRepository.delete_account(
-                db=db,
-                account=account
+        try:
+            return (
+                ChartOfAccountRepository.delete_account(
+                    db=db,
+                    account=account
+                )
             )
-        )
+
+        except IntegrityError:
+            db.rollback()
+
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Account cannot be deleted because it is "
+                    "linked to journal entries or other accounting records."
+                )
+            )

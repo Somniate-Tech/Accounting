@@ -6,14 +6,13 @@ from sqlalchemy import (
     ForeignKey,
     DateTime
 )
-
 from sqlalchemy.sql import func
 
 from sqlalchemy.orm import relationship
 
 from app.core.database import Base
 
-
+from sqlalchemy.dialects.postgresql import UUID
 class VendorPayment(Base):
     __tablename__ = "vendor_payments"
 
@@ -30,13 +29,13 @@ class VendorPayment(Base):
     )
 
     vendor_id = Column(
-        String,
+        UUID(as_uuid=True),
         ForeignKey("vendors.id"),
         nullable=False
     )
 
     bill_id = Column(
-        String,
+        UUID(as_uuid=True),
         ForeignKey("bills.id"),
         nullable=False
     )

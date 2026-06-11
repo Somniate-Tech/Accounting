@@ -25,7 +25,7 @@ from app.core.feature_guard import (
 from app.core.constants import (
     FeatureCodes
 )
-
+from sqlalchemy.exc import IntegrityError
 from app.modules.sales_invoices.repository import (
     create_sales_invoice_repo,
     get_all_sales_invoices_repo,
@@ -410,18 +410,19 @@ def update_sales_invoice_service(
     )
 
 
+
+
 def delete_sales_invoice_service(
     db: Session,
     invoice_id: int,
     organization_id: int
 ):
-    
+
     FeatureGuard.check_feature_access(
         db=db,
         organization_id=organization_id,
         feature_code=FeatureCodes.SALES
     )
-
 
     invoice = get_sales_invoice_by_id_repo(
         db=db,
@@ -430,16 +431,27 @@ def delete_sales_invoice_service(
     )
 
     if not invoice:
-
         raise HTTPException(
             status_code=404,
             detail="Invoice not found"
         )
 
-    delete_sales_invoice_repo(
-        db=db,
-        invoice=invoice
-    )
+    try:
+        delete_sales_invoice_repo(
+            db=db,
+            invoice=invoice
+        )
+
+    except IntegrityError:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Invoice cannot be deleted because it is "
+                "linked to existing stock-transactions."
+            )
+        )
 
     return {
         "message": "Invoice deleted successfully"

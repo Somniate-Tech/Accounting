@@ -31,7 +31,7 @@ from app.modules.inventory.categories.model import Category
 
 from app.modules.inventory.units.model import Unit
 
-
+from app.modules.inventory.warehouses.model import Warehouse
 def generate_sku(
     db: Session
 ):
@@ -89,12 +89,22 @@ def create_product_service(
         Unit.id == product.unit_id,
         Unit.organization_id == organization_id
     ).first()
-
+    
     if not unit:
 
         raise HTTPException(
             status_code=404,
             detail="Unit not found"
+        )
+    
+    warehouse = db.query(Warehouse).filter(
+        Warehouse.id == product.warehouse_id,
+        Warehouse.organization_id == organization_id
+    ).first()
+    if not warehouse:
+        raise HTTPException(
+            status_code=404,
+            detail="Warehouse not found"
         )
 
     generated_sku = generate_sku(db)
@@ -110,6 +120,8 @@ def create_product_service(
         category_id=product.category_id,
 
         unit_id=product.unit_id,
+
+        warehouse_id=product.warehouse_id,
 
         barcode=product.barcode,
 

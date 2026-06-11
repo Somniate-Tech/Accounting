@@ -146,6 +146,8 @@ def create_sales_invoice_service(
 
             transaction_type="SALE",
 
+            warehouse_id=product.warehouse_id,
+
             quantity=quantity,
 
             before_stock=before_stock,

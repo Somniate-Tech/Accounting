@@ -595,32 +595,50 @@ class ReportRepository:
                 ),
 
                 func.count(
-                    StockTransaction.product_id.distinct()
+                    func.distinct(Product.id)
                 ).label(
                     "total_products"
                 ),
 
-                func.sum(
-                    StockTransaction.quantity
+                func.coalesce(
+                    func.sum(
+                        Product.current_stock
+                    ),
+                    0
                 ).label(
                     "total_stock"
+                ),
+    
+                func.coalesce(
+                    func.sum(
+                        Product.current_stock
+                        *
+                        Product.purchase_price
+                    ),
+                    0
+                ).label(
+                    "inventory_value"
                 )
             )
 
-            .join(
-                StockTransaction,
+            .outerjoin(
 
-                Warehouse.id
-                == StockTransaction.warehouse_id
+                Product,
+
+                Product.warehouse_id
+                == Warehouse.id
             )
 
             .filter(
+
                 Warehouse.organization_id
                 == organization_id
             )
 
             .group_by(
+
                 Warehouse.id,
+
                 Warehouse.name
             )
 

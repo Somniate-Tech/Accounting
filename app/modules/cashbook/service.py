@@ -39,7 +39,10 @@ def get_all_cashbook_entries_service(
     db: Session,
     page: int,
     limit: int,
-    user_id: int
+    user_id: int,
+    start_date=None,
+    end_date=None,
+    transaction_date=None,
 ):
     skip = (page - 1) * limit
 
@@ -47,12 +50,18 @@ def get_all_cashbook_entries_service(
         db=db,
         skip=skip,
         limit=limit,
-        user_id=user_id
+        user_id=user_id,
+        transaction_date=transaction_date,
+        start_date=start_date,
+        end_date=end_date
     )
 
     total = get_total_cashbook_entries_count_repo(
         db=db,
-        user_id=user_id
+        user_id=user_id,
+        transaction_date=transaction_date,
+        start_date=start_date,
+        end_date=end_date
     )
 
     total_pages = (total + limit - 1) // limit

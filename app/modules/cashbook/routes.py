@@ -8,6 +8,7 @@ from fastapi import (
     File,
     Form
 )
+from typing import Optional
 
 from sqlalchemy.orm import Session
 
@@ -80,6 +81,9 @@ async def create_cashbook_entry(
 def get_cashbook_entries(
     page: int = Query(1, ge=1),
     limit: int = Query(10, le=100),
+    transaction_date: Optional[date] = Query(None),
+    start_date: Optional[date] = Query(None),
+    end_date: Optional[date] = Query(None),
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user)
 ):
@@ -87,6 +91,9 @@ def get_cashbook_entries(
         db=db,
         page=page,
         limit=limit,
+        transaction_date=transaction_date,
+        start_date=start_date,
+        end_date=end_date,
         user_id=current_user.id
     )
 

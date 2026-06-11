@@ -8,7 +8,8 @@ from app.modules.vendors.schema import (
 )
 
 from app.modules.vendors.model import Vendor
-
+from app.modules.purchase_orders.model import PurchaseOrder
+from app.modules.bills.model import Bill
 from app.modules.vendors.repository import (
     create_vendor_repo,
     get_all_vendors_repo,
@@ -177,7 +178,7 @@ def delete_vendor_service(
     vendor_code: str,
     organization_id
 ):
-    
+
     FeatureGuard.check_feature_access(
         db=db,
         organization_id=organization_id,
@@ -191,10 +192,39 @@ def delete_vendor_service(
     )
 
     if not vendor:
-
         raise HTTPException(
             status_code=404,
             detail="Vendor not found"
+        )
+
+    purchase_order_exists = (
+        db.query(PurchaseOrder)
+        .filter(
+            PurchaseOrder.vendor_id == vendor.id,
+            PurchaseOrder.organization_id == organization_id
+        )
+        .first()
+    )
+
+    if purchase_order_exists:
+        raise HTTPException(
+            status_code=400,
+            detail="Vendor is used in Purchase Orders and cannot be deleted"
+        )
+
+    bill_exists = (
+        db.query(Bill)
+        .filter(
+            Bill.vendor_id == vendor.id,
+            Bill.organization_id == organization_id
+        )
+        .first()
+    )
+
+    if bill_exists:
+        raise HTTPException(
+            status_code=400,
+            detail="Vendor is used in Bills and cannot be deleted"
         )
 
     delete_vendor_repo(

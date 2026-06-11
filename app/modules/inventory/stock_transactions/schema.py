@@ -7,7 +7,7 @@ from datetime import datetime
 class StockTransactionBase(BaseModel):
 
     product_id: int
-
+    warehouse_id: int | None = None
     transaction_type: str
 
     quantity: Decimal
@@ -31,7 +31,6 @@ class StockTransactionResponse(
     id: int
 
     organization_id: int
-
     before_stock: Decimal
     after_stock: Decimal
 

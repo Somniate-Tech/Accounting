@@ -38,6 +38,12 @@ class Product(Base):
         nullable=False
     )
 
+    warehouse_id = Column(
+        Integer,
+        ForeignKey("warehouses.id"),
+        nullable=False
+    )
+    
     name = Column(
         String,
         nullable=False

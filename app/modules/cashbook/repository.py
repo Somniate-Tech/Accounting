@@ -65,13 +65,33 @@ def get_all_cashbook_entries_repo(
     db: Session,
     skip: int,
     limit: int,
-    user_id: int
+    user_id: int,
+    start_date=None,
+    end_date=None,
+    transaction_date=None,
 ):
-    return (
-        db.query(CashbookEntry)
-        .filter(
-            CashbookEntry.user_id == user_id
+    query = db.query(CashbookEntry).filter(
+    CashbookEntry.user_id == user_id
+    )
+
+    if transaction_date:
+        query = query.filter(
+            CashbookEntry.transaction_date == transaction_date
         )
+    else:
+
+        if start_date:
+            query = query.filter(
+                CashbookEntry.transaction_date >= start_date
+            )
+
+        if end_date:
+            query = query.filter(
+                CashbookEntry.transaction_date <= end_date
+            )
+
+    return (
+        query
         .order_by(
             CashbookEntry.transaction_date.desc(),
             CashbookEntry.created_at.desc()
@@ -84,15 +104,32 @@ def get_all_cashbook_entries_repo(
 
 def get_total_cashbook_entries_count_repo(
     db: Session,
-    user_id: int
+    user_id: int,
+    start_date=None,
+    transaction_date=None,
+    end_date=None
 ):
-    return (
-        db.query(CashbookEntry)
-        .filter(
-            CashbookEntry.user_id == user_id
-        )
-        .count()
+    query = db.query(CashbookEntry).filter(
+    CashbookEntry.user_id == user_id
     )
+
+    if transaction_date:
+        query = query.filter(
+            CashbookEntry.transaction_date == transaction_date
+        )
+    else:
+
+        if start_date:
+            query = query.filter(
+                CashbookEntry.transaction_date >= start_date
+            )
+
+        if end_date:
+            query = query.filter(
+                CashbookEntry.transaction_date <= end_date
+            )
+
+    return query.count()
 
 
 def get_cashbook_entry_by_code_repo(
