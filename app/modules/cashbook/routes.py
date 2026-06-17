@@ -28,7 +28,8 @@ from app.modules.cashbook.service import (
     get_all_cashbook_entries_service,
     get_cashbook_entry_by_code_service,
     delete_cashbook_entry_service,
-    update_cashbook_entry_service
+    update_cashbook_entry_service,
+    export_cashbook_pdf_service,
 )
 
 router = APIRouter(
@@ -99,6 +100,27 @@ def get_cashbook_entries(
 
     return entries
 
+@router.get("/export/pdf")
+def export_cashbook_pdf(
+        db: Session = Depends(get_db),
+        current_user=Depends(get_current_user),
+        transaction_date: Optional[date] = Query(None),
+        start_date: Optional[date] = Query(None),
+        end_date: Optional[date] = Query(None),
+    ):
+    path = export_cashbook_pdf_service(
+        db=db,
+        user_id=current_user.id,
+        transaction_date=transaction_date,
+        start_date=start_date,
+        end_date=end_date
+    )
+    return {
+        "message": "PDF Generated",
+        "url": path
+    }
+
+
 
 @router.get("/{entry_code}")
 def get_single_cashbook_entry(
@@ -112,7 +134,7 @@ def get_single_cashbook_entry(
         user_id=current_user.id
     )
 
-    return entry
+    return entry    
 
 
 @router.delete("/{entry_code}")
@@ -146,3 +168,4 @@ def update_cashbook_entry(
         "message": "Cashbook entry updated successfully",
         "data": updated_entry
     }
+

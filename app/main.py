@@ -5,7 +5,6 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 from app.modules.vendors.model import Vendor
-
 from app.modules.vendors.routes import router as vendor_router
 from app.modules.auth.routes import router as auth_router
 

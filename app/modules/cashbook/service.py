@@ -7,6 +7,9 @@ from app.modules.cashbook.schema import (
     CashbookEntryUpdate
 )
 
+from datetime import datetime
+from app.core.pdf_generator import generate_table_pdf
+
 from app.modules.cashbook.repository import (
     create_cashbook_entry_repo,
     get_all_cashbook_entries_repo,
@@ -155,3 +158,66 @@ def update_cashbook_entry_service(
         entry=entry,
         entry_update=entry_update
     )
+
+
+
+def export_cashbook_pdf_service(
+        db: Session,
+        user_id: int,
+        start_date=None,
+        end_date=None,
+        transaction_date=None
+):
+    entries = get_all_cashbook_entries_repo(
+        db=db,
+        skip=0,
+        limit=1000000,
+        user_id=user_id,
+        transaction_date=transaction_date,
+        start_date=start_date,
+        end_date=end_date
+    )
+
+    if not entries:
+        raise HTTPException(status_code=404, detail="No cashbook records found")
+
+    headers = ["Code","Date","Type","Title","Amount","Method"]
+    data = []
+    total_amount = 0
+    for item in entries:
+        total_amount += item.amount
+        data.append([
+            item.entry_code,
+            str(item.transaction_date),
+            item.entry_type,
+            item.title,
+            str(item.amount),
+            item.payment_method
+        ])
+    data.append([
+        "",
+        "",
+        "",
+        "Total",
+        str(total_amount),
+        ""
+    ])
+    title = "Cashbook Report"
+    if transaction_date:
+        title += f" ({transaction_date})"
+    elif start_date and end_date:
+        title += (
+            f" ({start_date} to {end_date})"
+        )
+    filename = (
+        "uploads/reports/cashbook/"
+        f"cashbook_{user_id}_"
+        f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    )
+    generate_table_pdf(
+        filename=filename,
+        title=title,
+        headers=headers,
+        data=data
+    )
+    return filename
