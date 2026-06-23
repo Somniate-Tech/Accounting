@@ -7,6 +7,15 @@ class SubscriptionPaymentCreate(BaseModel):
     plan_id: int
     billing_cycle: str
 
+class VerifyPaymentRequest(BaseModel):
+    payment_id: int
+
+    razorpay_payment_id: str
+
+    razorpay_order_id: str
+
+    razorpay_signature: str
+
 
 class SubscriptionPaymentResponse(BaseModel):
     id: int

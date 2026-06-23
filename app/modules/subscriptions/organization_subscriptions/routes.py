@@ -119,26 +119,26 @@ def get_subscription_history(
 # CHOOSE PLAN
 # ==================================================
 
-@router.post("/choose-plan")
-def choose_plan(
+# @router.post("/choose-plan")
+# def choose_plan(
 
-    payload: ChoosePlanSchema,
+#     payload: ChoosePlanSchema,
 
-    current_user: User = Depends(
-        get_current_user
-    ),
+#     current_user: User = Depends(
+#         get_current_user
+#     ),
 
-    db: Session = Depends(get_db)
-):
+#     db: Session = Depends(get_db) 
+# ):
 
-    return (
-        OrganizationSubscriptionService
-        .choose_plan(
-            db=db,
-            plan_id=payload.plan_id,
-            user_id=current_user.id
-        )
-    )
+#     return (
+#         OrganizationSubscriptionService
+#         .choose_plan(
+#             db=db,
+#             plan_id=payload.plan_id,
+#             user_id=current_user.id
+#         )
+#     )
 
 
 # ==================================================

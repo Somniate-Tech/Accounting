@@ -438,3 +438,71 @@ class OrganizationSubscriptionService:
                 organization_member.organization_id
             )
         )
+    
+    @staticmethod
+    def activate_paid_subscription(
+            db: Session,
+            organization_id: int,
+            plan_id: int,
+            billing_cycle: str
+    ):
+
+        existing_subscription = (
+            OrganizationSubscriptionRepository
+            .get_active_subscription(
+                db=db,
+                organization_id=organization_id
+            )
+        )
+
+        if existing_subscription:
+            existing_subscription.status = "EXPIRED"
+
+        start_date = datetime.utcnow()
+
+        billing_cycle = billing_cycle.upper()
+
+        if billing_cycle == "MONTHLY":
+            end_date = (
+                start_date +
+                timedelta(days=30)
+            )
+
+        elif billing_cycle == "YEARLY":
+            end_date = (
+                start_date +
+                timedelta(days=365)
+            )
+
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid billing cycle"
+            )
+
+        subscription = OrganizationSubscription(
+
+            organization_id=organization_id,
+
+            plan_id=plan_id,
+
+            status="ACTIVE",
+
+            start_date=start_date,
+
+            end_date=end_date,
+
+            is_trial=False
+        )
+
+        db.add(
+            subscription
+        )
+
+        db.flush()
+
+        db.refresh(
+            subscription
+        )
+
+        return subscription
