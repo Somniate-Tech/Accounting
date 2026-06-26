@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from fastapi import HTTPException
-
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.modules.vendor_payments.repository import (
@@ -24,6 +24,54 @@ from app.modules.accounting.journal_entries.model import (
 from app.modules.accounting.chart_of_accounts.model import (
     ChartOfAccount
 )
+
+def get_system_account(
+        db: Session,
+        organization_id: int,
+        account_name: str
+):
+
+    account = (
+
+        db.query(ChartOfAccount)
+
+        .filter(
+
+            ChartOfAccount.organization_id
+            ==
+            organization_id,
+
+
+            func.lower(
+                ChartOfAccount.account_name
+            )
+
+            ==
+
+
+            account_name.lower()
+
+        )
+
+        .first()
+
+    )
+
+
+    if not account:
+
+        raise HTTPException(
+
+            status_code=400,
+
+            detail=(
+                f"{account_name} account is not configured."
+            )
+
+        )
+
+
+    return account
 
 class VendorPaymentService:
 
@@ -111,7 +159,30 @@ class VendorPaymentService:
 
         db.commit()
 
-        return payment
+        db.refresh(payment)
+
+        return {
+
+            "id": payment.id,
+            "vendor_id": payment.vendor_id,
+            "vendor_name": (
+                payment.vendor.vendor_name
+                if payment.vendor
+                else None
+            ),
+            "bill_id": payment.bill_id,
+            "bill_code": (
+                payment.bill.bill_code
+                if payment.bill
+                else None
+            ),
+            "amount": float(payment.amount),
+            "payment_method": payment.payment_method,
+            "reference_number": payment.reference_number,
+            "notes": payment.notes,
+            "payment_date": payment.payment_date,
+            "created_at": payment.created_at
+        }
 
     @staticmethod
     def get_all_payments(
@@ -132,7 +203,33 @@ class VendorPaymentService:
             )
         )
 
-        return payments
+        response = []
+
+        for payment in payments:
+            response.append(
+                {
+                    "id": payment.id,
+                    "vendor_id": payment.vendor_id,
+                    "vendor_name": (
+                        payment.vendor.vendor_name
+                        if payment.vendor
+                        else None
+                    ),
+                    "bill_id": payment.bill_id,
+                    "bill_code": (
+                        payment.bill.bill_code
+                        if payment.bill
+                        else None
+                    ),
+                    "amount": float(payment.amount),
+                    "payment_method": payment.payment_method,
+                    "reference_number": payment.reference_number,
+                    "notes": payment.notes,
+                    "payment_date": payment.payment_date,
+                    "created_at": payment.created_at
+                }
+            )
+        return response
 
     @staticmethod
     def get_single_payment(
@@ -156,7 +253,28 @@ class VendorPaymentService:
                 detail="Payment not found"
             )
 
-        return payment
+        return {
+            "id": payment.id,
+            "vendor_id": payment.vendor_id,
+            "vendor_name": (
+                payment.vendor.vendor_name
+                if payment.vendor
+                else None
+            ),
+            "bill_id": payment.bill_id,
+            "bill_code": (
+                payment.bill.bill_code
+                if payment.bill
+                else None
+            ),
+            "amount": float(payment.amount),
+            "payment_method": payment.payment_method,
+            "reference_number": payment.reference_number,
+            "notes": payment.notes,
+            "payment_date": payment.payment_date,
+            "created_at": payment.created_at
+
+        }
 
     @staticmethod
     def update_payment(
@@ -209,21 +327,19 @@ def create_vendor_payment_journal(
 ):
 
     accounts_payable = (
-        db.query(ChartOfAccount)
-        .filter(
-            ChartOfAccount.id == 16,
-            ChartOfAccount.organization_id == organization_id
-        )
-        .first()
-    )
 
-    cash_account = (
-        db.query(ChartOfAccount)
-        .filter(
-            ChartOfAccount.id == 3,
-            ChartOfAccount.organization_id == organization_id
+        get_system_account(
+            db=db,
+            organization_id=organization_id,
+            account_name="Accounts Payable"
         )
-        .first()
+    )
+    cash_account = (
+        get_system_account(
+            db=db,
+            organization_id=organization_id,
+            account_name="Cash Account"
+        )
     )
 
     if not accounts_payable:

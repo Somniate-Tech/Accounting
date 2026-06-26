@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from fastapi import HTTPException
-
+from sqlalchemy import func
 from decimal import Decimal
 
 from app.modules.customers.model import Customer
@@ -43,107 +43,144 @@ from app.modules.accounting.journal_entries.model import (
 from app.modules.accounting.chart_of_accounts.model import (
     ChartOfAccount
 )
+def get_system_account(
+        db: Session,
+        organization_id: int,
+        account_name: str
+):
 
+    account = (
+
+        db.query(ChartOfAccount)
+
+        .filter(
+
+            ChartOfAccount.organization_id == organization_id,
+
+            func.lower(
+                ChartOfAccount.account_name
+            )
+            ==
+            account_name.lower(),
+
+            ChartOfAccount.is_active.is_(True)
+
+        )
+
+        .first()
+
+    )
+
+    if not account:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"'{account_name}' account is not configured "
+                f"for organization {organization_id}. "
+                f"Please create this account first."
+            )
+        )
+
+    return account
 
 def create_sales_invoice_journal(
-    db: Session,
-    invoice,
-    organization_id: int
+        db: Session,
+        invoice,
+        organization_id: int
 ):
-    
+
     FeatureGuard.check_feature_access(
         db=db,
         organization_id=organization_id,
         feature_code=FeatureCodes.SALES
     )
 
-    accounts_receivable = (
-        db.query(ChartOfAccount)
-        .filter(
-            ChartOfAccount.id == 13,
-            ChartOfAccount.organization_id == organization_id
-        )
-        .first()
+    accounts_receivable = get_system_account(
+        db=db,
+        organization_id=organization_id,
+        account_name="Accounts Receivable"
     )
 
-    sales_revenue = (
-        db.query(ChartOfAccount)
-        .filter(
-            ChartOfAccount.id == 14,
-            ChartOfAccount.organization_id == organization_id
-        )
-        .first()
+    sales_revenue = get_system_account(
+        db=db,
+        organization_id=organization_id,
+        account_name="Sales Revenue"
     )
 
-    gst_payable = (
-        db.query(ChartOfAccount)
-        .filter(
-            ChartOfAccount.id == 15,
-            ChartOfAccount.organization_id == organization_id
-        )
-        .first()
+    gst_payable = get_system_account(
+        db=db,
+        organization_id=organization_id,
+        account_name="GST Payable"
     )
 
-    if not accounts_receivable:
-
-        raise HTTPException(
-            status_code=404,
-            detail="Accounts Receivable account not found"
-        )
-
-    if not sales_revenue:
-
-        raise HTTPException(
-            status_code=404,
-            detail="Sales Revenue account not found"
-        )
-
-    if not gst_payable:
-
-        raise HTTPException(
-            status_code=404,
-            detail="GST Payable account not found"
-        )
 
     journal_entry = JournalEntry(
+
         organization_id=organization_id,
+
         reference_type="SALES_INVOICE",
+
         reference_id=invoice.id,
-        description=f"Sales Invoice {invoice.invoice_number}"
+
+        description=(
+            f"Sales Invoice {invoice.invoice_number}"
+        )
+
     )
 
     db.add(journal_entry)
 
     db.flush()
 
-    receivable_line = JournalEntryLine(
-        journal_entry_id=journal_entry.id,
-        account_id=accounts_receivable.id,
-        debit=invoice.total_amount,
-        credit=0,
-        description="Customer receivable"
+
+    db.add_all(
+
+        [
+
+            JournalEntryLine(
+
+                journal_entry_id=journal_entry.id,
+
+                account_id=accounts_receivable.id,
+
+                debit=invoice.total_amount,
+
+                credit=0,
+
+                description="Customer receivable"
+            ),
+
+
+            JournalEntryLine(
+
+                journal_entry_id=journal_entry.id,
+
+                account_id=sales_revenue.id,
+
+                debit=0,
+
+                credit=invoice.subtotal,
+
+                description="Sales revenue"
+            ),
+
+
+            JournalEntryLine(
+
+                journal_entry_id=journal_entry.id,
+
+                account_id=gst_payable.id,
+
+                debit=0,
+
+                credit=invoice.tax_amount,
+
+                description="GST payable"
+            )
+
+        ]
+
     )
-
-    revenue_line = JournalEntryLine(
-        journal_entry_id=journal_entry.id,
-        account_id=sales_revenue.id,
-        debit=0,
-        credit=invoice.subtotal,
-        description="Sales revenue"
-    )
-
-    gst_line = JournalEntryLine(
-        journal_entry_id=journal_entry.id,
-        account_id=gst_payable.id,
-        debit=0,
-        credit=invoice.tax_amount,
-        description="GST payable"
-    )
-
-    db.add(receivable_line)
-    db.add(revenue_line)
-    db.add(gst_line)
-
 
 def create_sales_invoice_service(
     db: Session,

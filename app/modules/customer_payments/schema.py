@@ -26,6 +26,10 @@ class CustomerPaymentResponse(BaseModel):
 
     invoice_id: int
 
+    invoice_number: str | None = None
+
+    customer_name: str | None = None
+
     amount: float
 
     payment_method: str

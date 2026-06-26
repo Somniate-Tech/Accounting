@@ -7,6 +7,7 @@ from alembic import context
 
 from app.core.database import Base
 
+from app.core.config import settings
 # =========================
 # IMPORT ALL MODELS HERE
 # =========================
@@ -116,7 +117,7 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 # DEBUG PRINT
-print(Base.metadata.tables.keys())
+# print(Base.metadata.tables.keys())
 
 
 def run_migrations_offline() -> None:
@@ -124,7 +125,7 @@ def run_migrations_offline() -> None:
     Run migrations in offline mode.
     """
 
-    url = config.get_main_option("sqlalchemy.url")
+    url = settings.DATABASE_URL
 
     context.configure(
         url=url,
@@ -142,6 +143,10 @@ def run_migrations_online() -> None:
     """
     Run migrations in online mode.
     """
+    config.set_main_option(
+    "sqlalchemy.url",
+    settings.DATABASE_URL
+    )
 
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),

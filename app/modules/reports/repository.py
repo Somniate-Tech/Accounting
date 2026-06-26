@@ -50,6 +50,7 @@ class ReportRepository:
                 Bill.bill_code,
                 Bill.invoice_number,
                 Bill.invoice_date,
+                Bill.due_amount,
                 Bill.total_amount,
                 Bill.payment_status,
 

@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from fastapi import HTTPException
-
+from sqlalchemy import func
 from app.modules.bills.schema import (
     BillCreate,
     BillUpdate
@@ -37,6 +37,55 @@ from app.modules.accounting.journal_entries.model import (
 from app.modules.accounting.chart_of_accounts.model import (
     ChartOfAccount
 )
+
+def get_system_account(
+        db: Session,
+        organization_id: int,
+        account_name: str
+):
+
+    account = (
+
+        db.query(ChartOfAccount)
+
+        .filter(
+
+            ChartOfAccount.organization_id
+            ==
+            organization_id,
+
+
+            func.lower(
+                ChartOfAccount.account_name
+            )
+
+            ==
+
+
+            account_name.lower()
+
+        )
+
+        .first()
+
+    )
+
+
+    if not account:
+
+        raise HTTPException(
+
+            status_code=400,
+
+            detail=(
+                f"{account_name} account is not configured."
+            )
+
+        )
+
+
+
+    return account
 
 
 def create_bill_service(
@@ -95,7 +144,27 @@ def create_bill_service(
 
     db.commit()
 
-    return created_bill
+    db.refresh(created_bill)
+
+
+    return {
+
+        "id": str(created_bill.id),
+        "bill_code": created_bill.bill_code,
+        "vendor_id": str(created_bill.vendor_id),
+        "invoice_number": created_bill.invoice_number,
+        "invoice_date": created_bill.invoice_date,
+        "due_date": created_bill.due_date,
+        "subtotal": float(created_bill.subtotal),
+        "tax_amount": float(created_bill.tax_amount),
+        "total_amount": float(created_bill.total_amount),
+        "paid_amount": float(created_bill.paid_amount),
+        "due_amount": float(created_bill.due_amount),
+        "payment_status":
+            created_bill.payment_status.value,
+        "notes": created_bill.notes
+
+    }
 
 
 def get_all_bills_service(
@@ -231,21 +300,19 @@ def create_bill_journal(
 ):
 
     purchase_expense = (
-        db.query(ChartOfAccount)
-        .filter(
-            ChartOfAccount.id == 17,
-            ChartOfAccount.organization_id == organization_id
-        )
-        .first()
-    )
 
-    accounts_payable = (
-        db.query(ChartOfAccount)
-        .filter(
-            ChartOfAccount.id == 16,
-            ChartOfAccount.organization_id == organization_id
+        get_system_account(
+            db=db,
+            organization_id=organization_id,
+            account_name="Purchase Expense"
         )
-        .first()
+    )
+    accounts_payable = (
+        get_system_account(
+            db=db,
+            organization_id=organization_id,
+            account_name="Accounts Payable"
+        )
     )
 
     if not purchase_expense:

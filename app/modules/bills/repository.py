@@ -5,7 +5,8 @@ from decimal import Decimal
 
 from app.modules.bills.model import (
     Bill,
-    BillItem
+    BillItem,
+    BillPaymentStatus
 )
 
 from app.modules.bills.schema import (
@@ -159,6 +160,10 @@ def create_bill_repo(
         tax_amount=total_tax,
         total_amount=grand_total,
 
+        paid_amount=Decimal("0"),
+        due_amount=grand_total,
+        payment_status=BillPaymentStatus.UNPAID,
+        
         notes=bill.notes
     )
 

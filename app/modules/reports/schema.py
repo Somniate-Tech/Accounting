@@ -16,6 +16,8 @@ class PurchaseRegisterItem(BaseModel):
 
     total_amount: Decimal
 
+    due_amount: Decimal
+
     payment_status: str
 
 

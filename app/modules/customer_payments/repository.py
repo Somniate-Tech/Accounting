@@ -76,10 +76,7 @@ class CustomerPaymentRepository:
             db.query(CustomerPayment)
 
             .filter(
-                CustomerPayment.organization_id
-                == organization_id
-            )
-
+                CustomerPayment.organization_id== organization_id)
             .offset(skip)
 
             .limit(limit)
@@ -99,9 +96,7 @@ class CustomerPaymentRepository:
 
             .filter(
                 CustomerPayment.id == payment_id,
-
-                CustomerPayment.organization_id
-                == organization_id
+                CustomerPayment.organization_id== organization_id
             )
 
             .first()

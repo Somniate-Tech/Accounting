@@ -18,6 +18,8 @@ class VendorPaymentResponse(BaseModel):
     id: int
     vendor_id: UUID
     bill_id: UUID
+    vendor_name: str | None
+    bill_code: str | None
     amount: float
     payment_method: str
     reference_number: str | None

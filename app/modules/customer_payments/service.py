@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.modules.customer_payments.repository import (
@@ -119,7 +119,31 @@ class CustomerPaymentService:
 
         db.commit()
 
-        return payment
+        db.refresh(payment)
+
+
+        return {
+
+            "id": payment.id,
+            "customer_id": payment.customer_id,
+            "customer_name": (
+                payment.customer.customer_name
+                if payment.customer
+                else None
+            ),
+            "invoice_id": payment.invoice_id,
+            "invoice_number": (
+                payment.invoice.invoice_number
+                if payment.invoice
+                else None
+            ),
+            "amount": payment.amount,
+            "payment_method": payment.payment_method,
+            "reference_number": payment.reference_number,
+            "notes": payment.notes,
+            "payment_date": payment.payment_date,
+            "created_at": payment.created_at
+        }
 
     @staticmethod
     def get_all_payments(
@@ -146,7 +170,49 @@ class CustomerPaymentService:
             )
         )
 
-        return payments
+        response = []
+
+        for payment in payments:
+
+            response.append(
+
+                {
+
+                    "id": payment.id,
+
+                    "customer_id": payment.customer_id,
+
+                    "customer_name": (
+                        payment.customer.customer_name
+                        if payment.customer
+                        else None
+                    ),
+
+                    "invoice_id": payment.invoice_id,
+
+                    "invoice_number": (
+                        payment.invoice.invoice_number
+                        if payment.invoice
+                        else None
+                    ),
+
+                    "amount": payment.amount,
+
+                    "payment_method": payment.payment_method,
+
+                    "reference_number": payment.reference_number,
+
+                    "notes": payment.notes,
+
+                    "payment_date": payment.payment_date,
+
+                    "created_at": payment.created_at
+
+                }
+
+            )
+
+        return response
 
     @staticmethod
     def get_single_payment(
@@ -176,7 +242,28 @@ class CustomerPaymentService:
                 detail="Payment not found"
             )
 
-        return payment
+        return {
+
+            "id": payment.id,
+            "customer_id": payment.customer_id,
+            "customer_name": (
+                payment.customer.customer_name
+                if payment.customer
+                else None
+            ),
+            "invoice_id": payment.invoice_id,
+            "invoice_number": (
+                payment.invoice.invoice_number
+                if payment.invoice
+                else None
+            ),
+            "amount": payment.amount,
+            "payment_method": payment.payment_method,
+            "reference_number": payment.reference_number,
+            "notes": payment.notes,
+            "payment_date": payment.payment_date,
+            "created_at": payment.created_at
+        }
 
     @staticmethod
     def update_payment(
@@ -224,10 +311,55 @@ class CustomerPaymentService:
             )
         )
 
-        return updated_payment
+        return {
+
+            "id": updated_payment.id,
+            "customer_id": updated_payment.customer_id,
+            "customer_name": (
+                updated_payment.customer.customer_name
+                if updated_payment.customer
+                else None
+            ),
+            "invoice_id": updated_payment.invoice_id,
+            "invoice_number": (
+                updated_payment.invoice.invoice_number
+                if updated_payment.invoice
+                else None
+            ),
+            "amount": updated_payment.amount,
+            "payment_method": updated_payment.payment_method,
+            "reference_number": updated_payment.reference_number,
+            "notes": updated_payment.notes,
+            "payment_date": updated_payment.payment_date,
+            "created_at": updated_payment.created_at
+        }
     
 
-
+def get_system_account(
+        db: Session,
+        organization_id: int,
+        account_name: str
+):
+    account = (
+        db.query(ChartOfAccount)
+        .filter(
+            ChartOfAccount.organization_id==organization_id,
+            func.lower(
+                ChartOfAccount.account_name
+            )
+            ==
+            account_name.lower()
+        )
+        .first()
+    )
+    if not account:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"{account_name} account is not configured."
+            )
+        )
+    return account
 
 def create_customer_payment_journal(
     db: Session,
@@ -236,21 +368,19 @@ def create_customer_payment_journal(
 ):
 
     cash_account = (
-        db.query(ChartOfAccount)
-        .filter(
-            ChartOfAccount.id == 3,
-            ChartOfAccount.organization_id == organization_id
+         get_system_account(
+            db=db,
+            organization_id=organization_id,
+            account_name="Cash Account"
         )
-        .first()
     )
-
     accounts_receivable = (
-        db.query(ChartOfAccount)
-        .filter(
-            ChartOfAccount.id == 13,
-            ChartOfAccount.organization_id == organization_id
+        get_system_account(
+            db=db,
+            organization_id=organization_id,
+            account_name="Accounts Receivable"
         )
-        .first()
+
     )
 
     if not cash_account:

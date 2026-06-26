@@ -21,6 +21,7 @@ from app.core.feature_guard import (
 from app.core.constants import (
     FeatureCodes
 )
+from sqlalchemy import func
 
 class ChartOfAccountService:
 
@@ -58,7 +59,11 @@ class ChartOfAccountService:
             .first()
         )
 
-        if latest_account:
+        if (
+            latest_account and
+            latest_account.account_code and
+            str(latest_account.account_code).isdigit()
+    ):
 
             return str(
                 int(latest_account.account_code) + 10
@@ -77,6 +82,29 @@ class ChartOfAccountService:
             organization_id=organization_id,
             feature_code=FeatureCodes.ACCOUNTING
         )
+        existing_account = (
+            db.query(ChartOfAccount)
+            .filter(
+                ChartOfAccount.organization_id == organization_id,
+                func.lower(ChartOfAccount.account_name)==payload.account_name.lower())
+            .first()
+        )
+        if existing_account:
+            raise HTTPException(
+                status_code=400,
+                detail=(f"{payload.account_name} already exists.")
+            )
+        
+        if payload.parent_account_id:
+            parent_account = (
+                db.query(ChartOfAccount)
+                .filter(ChartOfAccount.id==payload.parent_account_id,ChartOfAccount.organization_id==organization_id).first())
+
+            if not parent_account:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Parent account not found"
+                )
 
         generated_code = (
             ChartOfAccountService.generate_account_code(

@@ -403,6 +403,8 @@ class ReportService:
 
                 invoice_date=row.invoice_date,
 
+                due_amount=row.due_amount,
+
                 total_amount=row.total_amount,
 
                 payment_status=row.payment_status.value

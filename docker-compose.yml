@@ -1,0 +1,44 @@
+services:
+
+  db:
+    image: postgres:17
+
+    container_name: accounting_db
+
+    restart: always
+
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Strongpass123
+      POSTGRES_DB: accounting_db
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    ports:
+      - "5432:5432"
+
+
+  backend:
+
+    build: .
+
+    container_name: accounting_backend
+
+    restart: always
+
+    env_file:
+      - .env
+
+    depends_on:
+      - db
+
+    ports:
+      - "8000:8000"
+
+    volumes:
+      - ./uploads:/app/uploads
+
+
+volumes:
+  postgres_data:

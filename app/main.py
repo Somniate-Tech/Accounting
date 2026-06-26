@@ -1,13 +1,6 @@
-
-
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
-
 from app.modules.vendors.model import Vendor
 from app.modules.vendors.routes import router as vendor_router
-from app.modules.auth.routes import router as auth_router
-
 # Routers links
 from app.modules.auth.routes import(
     router as auth_router
@@ -87,7 +80,7 @@ from app.modules.subscriptions.subscription_payments.routes import (
 from fastapi.middleware.cors import CORSMiddleware
 
 from fastapi.staticfiles import StaticFiles
-
+from app.core.config import settings
 
 app = FastAPI(
     title="Accounting SaaS API",
@@ -97,21 +90,22 @@ app = FastAPI(
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:5500",
-        "http://localhost:5500",
-        "http://192.168.1.14:5500",
-        "http://192.168.1.14:5173",
-    ],
+    # allow_origins=[
+    #     "http://localhost:5173",
+    #     "http://127.0.0.1:5173",
+    #     "http://127.0.0.1:5500",
+    #     "http://localhost:5500",
+    #     "http://192.168.1.14:5500",
+    #     "http://192.168.1.14:5173",
+    # ],
+    allow_origins=settings.CORS_ORIGINS.split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Serve uploads folder
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 
 # Routers
 app.include_router(auth_router)
@@ -145,4 +139,9 @@ app.include_router(subscription_payment_router)
 def home():
     return {
         "message": "Accounting Backend Running Successfully"
+    }
+@app.get("/health")
+def health():
+    return {
+        "status":"healthy"
     }

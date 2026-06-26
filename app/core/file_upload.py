@@ -5,10 +5,11 @@ from fastapi import (
     UploadFile,
     HTTPException
 )
+from app.core.config import settings
 
 UPLOAD_DIR = Path(
-    "uploads/documents"
-)
+    settings.UPLOAD_DIR
+) / "documents"
 
 UPLOAD_DIR.mkdir(
     parents=True,

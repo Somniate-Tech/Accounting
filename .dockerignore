@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+
+# Environment files
+.env
+.env.*
+
+# Git
+.git
+.gitignore
+.gitkeep
+
+# VS Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# Logs
+*.log
+*.pid
+
+# Uploads
+uploads/
+media/
+
+# Tests
+.pytest_cache/
+
+# Coverage
+.coverage
+htmlcov/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+dist/
+build/
+*.egg-info/
+
+# Temporary
+*.tmp
+*.temp
