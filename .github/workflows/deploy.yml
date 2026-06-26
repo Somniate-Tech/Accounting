@@ -1,0 +1,42 @@
+name: Deploy Accounting
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.PORT }}
+
+          script: |
+            cd /var/www/Accounting
+
+            echo "Pulling latest code..."
+            git pull origin main
+
+            echo "Building containers..."
+            docker compose build
+
+            echo "Restarting containers..."
+            docker compose up -d --remove-orphans
+
+            echo "Deployment completed."
+
+      - name: Health Check
+        run: |
+          sleep 15
+          curl -f https://accounting.staffroute.in || exit 1
