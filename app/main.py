@@ -138,7 +138,8 @@ app.include_router(subscription_payment_router)
 @app.get("/")
 def home():
     return {
-        "message": "Accounting Backend Running Successfully"
+        "message": "Accounting Backend Running Successfully",
+        "version": "v1.0.1"
     }
 @app.get("/health")
 def health():
