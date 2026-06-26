@@ -23,8 +23,6 @@ jobs:
           port: ${{ secrets.PORT }}
 
           script: |
-            set -e
-
             cd /var/www/Accounting
 
             echo "Pulling latest code..."
@@ -36,12 +34,12 @@ jobs:
             echo "Restarting containers..."
             docker compose up -d --remove-orphans
 
-            echo "Cleaning old images..."
+            echo "Cleaning unused images..."
             docker image prune -af
 
             echo "Deployment completed."
 
       - name: Health Check
         run: |
-          sleep 20
-          curl -f https://accounting.staffroute.in/health
+          sleep 15
+          curl -f https://accounting.staffroute.in || exit 1
