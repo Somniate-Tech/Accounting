@@ -115,7 +115,8 @@ def register(
         allowed_extensions = [
             ".jpg",
             ".jpeg",
-            ".png"
+            ".png",
+            ".webp",
         ]
 
         file_extension = os.path.splitext(
@@ -134,17 +135,18 @@ def register(
             f"{file_extension}"
         )
 
-        file_path = (
-            f"uploads/organizations/{filename}"
-        )
+        # Create upload directory if it doesn't exist
+        upload_dir = os.path.join("uploads", "organizations")
+        os.makedirs(upload_dir, exist_ok=True)
 
+        # Full file path
+        file_path = os.path.join(upload_dir, filename)
+
+        # Save uploaded image
         with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(photo.file, buffer)
 
-            shutil.copyfileobj(
-                photo.file,
-                buffer
-            )
-
+        # Store relative path in database
         photo_path = file_path
 
     payload = RegisterSchema(
