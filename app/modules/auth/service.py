@@ -42,6 +42,9 @@ from app.modules.subscriptions.plans.model import (
 from app.modules.subscriptions.organization_subscriptions.model import (
     OrganizationSubscription
 )
+from app.modules.accounting.chart_of_accounts.service import (
+    ChartOfAccountService
+)
 
 async def send_otp_service(
     db: Session,
@@ -133,6 +136,11 @@ def register_service(
         address=payload.address,
         created_by=user.id,
         photo=photo
+    )
+
+    ChartOfAccountService.create_default_chart_of_accounts(
+    db=db,
+    organization_id=organization.id
     )
 
     create_organization_member_repo(

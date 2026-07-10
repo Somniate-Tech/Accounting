@@ -21,6 +21,9 @@ from app.core.feature_guard import (
 from app.core.constants import (
     FeatureCodes
 )
+from app.modules.accounting.chart_of_accounts.defaults import (
+    DEFAULT_CHART_OF_ACCOUNTS
+)
 from sqlalchemy import func
 
 class ChartOfAccountService:
@@ -250,3 +253,60 @@ class ChartOfAccountService:
                     "linked to journal entries or other accounting records."
                 )
             )
+        
+
+    @staticmethod
+    def create_default_chart_of_accounts(
+        db: Session,
+        organization_id: int
+    ):
+        # Prevent duplicate creation
+        existing = (
+            db.query(ChartOfAccount)
+            .filter(
+                ChartOfAccount.organization_id == organization_id
+            )
+            .first()
+        )
+
+        if existing:
+            return
+
+        parent_accounts = {}
+
+        # Create parent accounts first
+        for account in DEFAULT_CHART_OF_ACCOUNTS:
+
+            if account["parent"] is None:
+
+                coa = ChartOfAccount(
+                    organization_id=organization_id,
+                    account_code=account["account_code"],
+                    account_name=account["account_name"],
+                    account_type=account["account_type"],
+                    parent_account_id=None,
+                    is_active=True
+                )
+
+                db.add(coa)
+                db.flush()
+
+                parent_accounts[account["account_name"]] = coa.id
+
+        # Create child accounts
+        for account in DEFAULT_CHART_OF_ACCOUNTS:
+
+            if account["parent"] is not None:
+
+                coa = ChartOfAccount(
+                    organization_id=organization_id,
+                    account_code=account["account_code"],
+                    account_name=account["account_name"],
+                    account_type=account["account_type"],
+                    parent_account_id=parent_accounts[account["parent"]],
+                    is_active=True
+                )
+
+                db.add(coa)
+
+        db.commit()
